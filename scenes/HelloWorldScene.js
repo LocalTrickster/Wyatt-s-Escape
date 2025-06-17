@@ -50,6 +50,9 @@ export default class HelloWorldScene extends Phaser.Scene {
         this.physics.add.collider(this.player, this.platformGroup);
 
         this.input.on("pointerdown", this.jump, this);
+
+        // NUEVO: Controles de teclado
+        this.cursors = this.input.keyboard.createCursorKeys();
     }
 
     addPlatform(platformWidth, posX){
@@ -88,6 +91,11 @@ export default class HelloWorldScene extends Phaser.Scene {
             this.scene.restart();
         }
         this.player.x = gameOptions.playerStartPosition;
+
+        // NUEVO: Control de salto con teclado
+        if (Phaser.Input.Keyboard.JustDown(this.cursors.up) || Phaser.Input.Keyboard.JustDown(this.cursors.space)) {
+            this.jump();
+        }
 
         let minDistance = config.width;
         this.platformGroup.getChildren().forEach(function(platform){
