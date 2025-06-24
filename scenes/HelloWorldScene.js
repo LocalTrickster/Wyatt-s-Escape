@@ -19,6 +19,7 @@ export default class HelloWorldScene extends Phaser.Scene {
     preload() {
         this.load.image("platform", "./public/assets/platform.png");
         this.load.image("player", "./public/assets/Ninja.png");
+        this.load.image("obstacle", "./public/assets/diamond.png")
     }
 
     create() {
@@ -37,6 +38,17 @@ export default class HelloWorldScene extends Phaser.Scene {
             }
         });
 
+        this.obstacleGroup = this.add.group({
+            removeCallback: function(obstacle){
+                obstacle.scene.obstaclePool.add(obstacle)
+            }
+        });
+        this.obstaclePool = this.add.group({
+            removeCallback: function(obstacle){
+                obstacle.scene.obstacleGroup.add(obstacle)
+            }
+        });
+
         this.playerJumps = 0;
 
         // Plataforma inicial
@@ -48,6 +60,10 @@ export default class HelloWorldScene extends Phaser.Scene {
         this.player.setScale(0.25); // Escala más pequeña
 
         this.physics.add.collider(this.player, this.platformGroup);
+
+        this.physics.add.collider(this.player, this.obstacleGroup, () => {
+            this.scene.restart();
+        }, null, this);
 
         this.input.on("pointerdown", this.jump, this);
 
@@ -73,6 +89,34 @@ export default class HelloWorldScene extends Phaser.Scene {
         }
         platform.displayWidth = platformWidth;
         this.nextPlatformDistance = Phaser.Math.Between(gameOptions.spawnRange[0], gameOptions.spawnRange[1]);
+
+        // Probabilidad de generar un obstáculo en la plataforma
+        if (Phaser.Math.Between(0, 1)) {
+            this.addObstacle(
+                posX, 
+                platform.y, 
+                platformWidth
+            );
+        }
+    }
+
+    addObstacle(posX, platformY, platformWidth){
+        let obstacle;
+        if(this.obstaclePool.getLength()){
+            obstacle = this.obstaclePool.getFirst();
+            obstacle.x = posX;
+            obstacle.y = platformY - 40; // Ajusta la altura según el sprite
+            obstacle.active = true;
+            obstacle.visible = true;
+            this.obstaclePool.remove(obstacle);
+        } else {
+            obstacle = this.physics.add.sprite(posX, platformY - 40, "obstacle");
+            obstacle.setImmovable(true);
+            obstacle.setVelocityX(gameOptions.platformStartSpeed * -1);
+            this.obstacleGroup.add(obstacle);
+        }
+        // Opcional: escala o tamaño del obstáculo
+        obstacle.setScale(0.4);
     }
 
     jump(){
@@ -97,19 +141,21 @@ export default class HelloWorldScene extends Phaser.Scene {
             this.jump();
         }
 
-        let minDistance = config.width;
+        let maxRight = 0;
         this.platformGroup.getChildren().forEach(function(platform){
-            let platformDistance = config.width - platform.x - platform.displayWidth / 2;
-            minDistance = Math.min(minDistance, platformDistance);
+            let rightEdge = platform.x + platform.displayWidth / 2;
+            if (rightEdge > maxRight) {
+                maxRight = rightEdge;
+            }
             if(platform.x < - platform.displayWidth / 2){
                 this.platformGroup.killAndHide(platform);
                 this.platformGroup.remove(platform);
             }
         }, this);
 
-        if(minDistance > this.nextPlatformDistance){
+        if(maxRight < config.width){
             var nextPlatformWidth = Phaser.Math.Between(gameOptions.platformSizeRange[0], gameOptions.platformSizeRange[1]);
-            this.addPlatform(nextPlatformWidth, config.width + nextPlatformWidth / 2);
+            this.addPlatform(nextPlatformWidth, maxRight + nextPlatformWidth / 2);
         }
     }
 }
