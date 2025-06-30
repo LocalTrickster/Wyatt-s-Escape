@@ -4,7 +4,7 @@
 const gameOptions = {
     platformStartSpeed: 350,
     spawnRange: [100, 350],
-    platformSizeRange: [50, 250],
+    platformSize: 150,
     playerGravity: 900,
     jumpForce: 400,
     playerStartPosition: 200,
@@ -18,31 +18,35 @@ export default class HelloWorldScene extends Phaser.Scene {
 
     preload() {
         this.load.image("platform", "./public/assets/platform.png");
-        this.load.image("player", "./public/assets/Ninja.png");
-        this.load.image("obstacle", "./public/assets/diamond.png");
-        this.load.image("bigObstacle", "./public/assets/square.png");
-        this.load.image("drone", "./public/assets/triangle.png");
+        this.load.image("playerStanding", "./public/assets/wyattstanding.png"); // use your standing sprite filename
+        this.load.image("playerRunning", "./public/assets/wyattrunning.png");   // use your running sprite filename
+        this.load.image("obstacle", "./public/assets/table.png"); 
+        this.load.image("bigObstacle", "./public/assets/barrel.png");
+        this.load.image('drone', 'public/assets/drone.png');
+        this.load.image('door', 'public/assets/door.png');
+        this.load.image('window', 'public/assets/window.png');
+        this.load.image('biggestobstacle', 'public/assets/box.png');
     }
 
     create() {
         const config = this.sys.game.config;
 
-        // Jugador
-        this.player = this.physics.add.sprite(gameOptions.playerStartPosition, config.height / 2, "player");
+        // Player
+        this.player = this.physics.add.sprite(gameOptions.playerStartPosition, config.height / 2, "playerStanding");
         this.player.setGravityY(gameOptions.playerGravity);
-        this.player.setScale(0.25);
+        this.player.setScale(1); // Make Wyatt as big as Ninja.png was (adjust if needed)
 
-        // Create platforms group
+        // Platforms group
         this.platforms = this.physics.add.group();
 
-        const platformY = config.height * 0.7; // Platforms are now higher
+        const platformY = config.height * 0.7;
         const platformWidth = config.width * 1.5;
 
         // First platform
         let platform1 = this.platforms.create(0, platformY, "platform");
         platform1.setOrigin(0, 0.1);
         platform1.displayWidth = platformWidth;
-        platform1.displayHeight = 450; // Make platform thick (adjust value as needed)
+        platform1.displayHeight = 450;
         platform1.setImmovable(true);
         platform1.body.allowGravity = false;
 
@@ -60,7 +64,7 @@ export default class HelloWorldScene extends Phaser.Scene {
         // Obstacles group
         this.obstacleGroup = this.add.group();
         this.obstaclePool = this.add.group();
-        this.droneGroup = this.physics.add.group(); // <-- add this line
+        this.droneGroup = this.physics.add.group();
 
         this.playerJumps = 0;
         this.isJumping = false;
@@ -69,11 +73,14 @@ export default class HelloWorldScene extends Phaser.Scene {
 
         this.lastObstacleX = 0;
         this.lastObstacleSpawnX = 0;
-        this.minObstacleSpacing = 120; // Adjust as needed
+        this.minObstacleSpacing = 120;
         this.obstacleDistance = 0;
 
         this.input.on("pointerdown", this.jump, this);
         this.cursors = this.input.keyboard.createCursorKeys();
+        this.keyW = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
+        this.keySpace = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+        this.keyR = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
 
         this.physics.add.collider(this.player, this.obstacleGroup, () => {
             this.gameOver();
@@ -84,24 +91,23 @@ export default class HelloWorldScene extends Phaser.Scene {
 
         // Flash overlay for damage indication
         this.flashOverlay = this.add.rectangle(
-            this.sys.game.config.width / 2,
-            this.sys.game.config.height / 2,
-            this.sys.game.config.width,
-            this.sys.game.config.height,
+            config.width / 2,
+            config.height / 2,
+            config.width,
+            config.height,
             0xffffff,
-            0 // Start transparent
+            0
         );
-        this.flashOverlay.setDepth(1000); // On top of everything
+        this.flashOverlay.setDepth(1000);
         this.isFlashing = false;
         this.flashTimer = 0;
         this.flashColor = 0xffffff;
         this.mustHide = false;
-
         this.lastFlashSwitch = 0;
 
         this.currentPlatformSpeed = gameOptions.platformStartSpeed;
-        this.platformSpeedIncrease = 5; // Speed increase per second (tweak as needed)
-        this.maxPlatformSpeed = 900;    // Optional: set a max speed
+        this.platformSpeedIncrease = 5;
+        this.maxPlatformSpeed = 900;
 
         // Score variables
         this.score = 0;
@@ -110,34 +116,34 @@ export default class HelloWorldScene extends Phaser.Scene {
 
         // Padding and layout constants
         const padding = 30;
-        this.labelValueGap = 16; // space between label and value
+        this.labelValueGap = 16;
         const topY = 20;
         const lineGap = 32;
 
-        this.rightEdge = this.sys.game.config.width - 30;
+        this.rightEdge = config.width - 30;
 
-        // Score value (right-aligned, flush with right edge)
+        // Score value
         this.scoreText = this.add.text(
             this.rightEdge, topY,
             this.padScore(this.score),
             { fontFamily: 'PublicPixel', fontSize: '24px', fill: '#fff', align: 'right' }
         ).setOrigin(1, 0);
 
-        // SCORE label (to the left of the score number)
+        // SCORE label
         this.scoreLabel = this.add.text(
             this.rightEdge - this.scoreText.width - this.labelValueGap, topY,
             "SCORE",
             { fontFamily: 'PublicPixel', fontSize: '24px', fill: '#fff', align: 'right' }
         ).setOrigin(1, 0);
 
-        // High score value (right-aligned, flush with right edge)
+        // High score value
         this.highScoreText = this.add.text(
             this.rightEdge, topY + lineGap,
             this.padScore(this.highScore),
             { fontFamily: 'PublicPixel', fontSize: '20px', fill: '#fff', align: 'right' }
         ).setOrigin(1, 0);
 
-        // HI label (to the left of the high score number)
+        // HI label
         this.hiLabel = this.add.text(
             this.rightEdge - this.highScoreText.width - this.labelValueGap, topY + lineGap,
             "HI",
@@ -145,8 +151,8 @@ export default class HelloWorldScene extends Phaser.Scene {
         ).setOrigin(1, 0);
 
         this.hideText = this.add.text(
-            this.sys.game.config.width / 2,
-            this.sys.game.config.height / 2,
+            config.width / 2,
+            config.height / 2,
             "HIDE",
             { fontFamily: 'PublicPixel', fontSize: '64px', fill: '#fff' }
         ).setOrigin(0.5, 0.5);
@@ -156,8 +162,8 @@ export default class HelloWorldScene extends Phaser.Scene {
         // Game Over text
         this.isGameOver = false;
         this.gameOverText = this.add.text(
-            this.sys.game.config.width / 2,
-            this.sys.game.config.height / 2 - 40,
+            config.width / 2,
+            config.height / 2 - 40,
             "GAME OVER",
             { fontFamily: 'PublicPixel', fontSize: '48px', fill: '#fff' }
         ).setOrigin(0.5, 0.5);
@@ -165,16 +171,41 @@ export default class HelloWorldScene extends Phaser.Scene {
         this.gameOverText.setVisible(false);
 
         this.restartText = this.add.text(
-            this.sys.game.config.width / 2,
-            this.sys.game.config.height / 2 + 20,
+            config.width / 2,
+            config.height / 2 + 20,
             "Press R to restart",
             { fontFamily: 'PublicPixel', fontSize: '24px', fill: '#fff' }
         ).setOrigin(0.5, 0.5);
         this.restartText.setDepth(2000);
         this.restartText.setVisible(false);
+
+        this.startText = this.add.text(
+            this.sys.game.config.width / 2,
+            this.sys.game.config.height / 2 + 140,
+            "Press the jump button to start",
+            { fontFamily: 'PublicPixel', fontSize: '24px', fill: '#fff' }
+        ).setOrigin(0.5, 0.5);
+        this.startText.setDepth(2000);
+        this.startText.setVisible(true);
+
+        this.inIntroRoom = true;
+
+        // Place the door at the ninja's starting X, above the first platform
+        const platform = this.platforms.getChildren()[0];
+        const ninjaX = this.player.x;
+        platform.doorSprite = this.add.image(
+            ninjaX,
+            platform.y - 40,
+            'door'
+        );
+        platform.doorSprite.setOrigin(0.5, 1);
+        platform.doorSprite.setScale(3.2);
+        platform.doorSprite.setDepth(-10);
+        platform.doorOffsetX = ninjaX - platform.x;
+        this.textures.get('door').setFilter(Phaser.Textures.FilterMode.NEAREST);
+        this.textures.get('player').setFilter(Phaser.Textures.FilterMode.NEAREST);
     }
 
-    // Removed obstacle spawning from addPlatform!
     addPlatform(platformWidth, posX){
         const config = this.sys.game.config;
         let platform;
@@ -195,28 +226,26 @@ export default class HelloWorldScene extends Phaser.Scene {
         }
         platform.displayWidth = platformWidth;
         this.nextPlatformDistance = Phaser.Math.Between(gameOptions.spawnRange[0], gameOptions.spawnRange[1]);
-        // No obstacle spawning here!
     }
 
     addObstacle(posX, platformY, platformWidth){
         let obstacle = null;
-        // Find an inactive obstacle in the pool
         this.obstaclePool.getChildren().forEach(obj => {
             if (!obstacle && !obj.active) obstacle = obj;
         });
+        const yOffset = 4; // Move obstacle up by 12 pixels
         if(obstacle){
             this.obstaclePool.remove(obstacle);
             this.obstacleGroup.remove(obstacle);
             obstacle.x = posX;
-            obstacle.y = platformY;
+            obstacle.y = platformY - yOffset; // <-- adjust here
             obstacle.setTexture("obstacle");
             obstacle.setActive(true);
             obstacle.setVisible(true);
-            // Make it rectangular and longer
-            obstacle.displayWidth = 80;   // Adjust as needed for jumpability
-            obstacle.displayHeight = 40;  // Adjust as needed
+            obstacle.displayWidth = 80;
+            obstacle.displayHeight = 40;
         } else {
-            obstacle = this.physics.add.sprite(posX, platformY, "obstacle");
+            obstacle = this.physics.add.sprite(posX, platformY - yOffset, "obstacle"); // <-- adjust here
             obstacle.setImmovable(true);
             obstacle.displayWidth = 80;
             obstacle.displayHeight = 40;
@@ -226,26 +255,25 @@ export default class HelloWorldScene extends Phaser.Scene {
 
     addBigObstacle(posX, platformY) {
         let obstacle = null;
-        // Find an inactive obstacle in the pool
         this.obstaclePool.getChildren().forEach(obj => {
             if (!obstacle && !obj.active) obstacle = obj;
         });
+        const yOffset = -10; // Lower it further (negative moves it down)
         if(obstacle){
             this.obstaclePool.remove(obstacle);
             this.obstacleGroup.remove(obstacle);
             obstacle.x = posX;
-            obstacle.y = platformY;
+            obstacle.y = platformY - yOffset;
             obstacle.setTexture("bigObstacle");
             obstacle.setActive(true);
             obstacle.setVisible(true);
-            // Make it more rectangular and longer
-            obstacle.displayWidth = 140;  // Adjust as needed for jumpability
-            obstacle.displayHeight = 50;  // Adjust as needed
+            obstacle.displayWidth = 260;
+            obstacle.displayHeight = 90;
         } else {
-            obstacle = this.physics.add.sprite(posX, platformY, "bigObstacle");
+            obstacle = this.physics.add.sprite(posX, platformY - yOffset, "bigObstacle");
             obstacle.setImmovable(true);
-            obstacle.displayWidth = 140;
-            obstacle.displayHeight = 50;
+            obstacle.displayWidth = 260;
+            obstacle.displayHeight = 90;
         }
         this.obstacleGroup.add(obstacle);
     }
@@ -255,26 +283,25 @@ export default class HelloWorldScene extends Phaser.Scene {
         this.obstaclePool.getChildren().forEach(obj => {
             if (!obstacle && !obj.active) obstacle = obj;
         });
+        const yOffset = -30; // Lower it further (negative moves it down more)
         if(obstacle){
             this.obstaclePool.remove(obstacle);
             this.obstacleGroup.remove(obstacle);
             obstacle.x = posX;
-            obstacle.y = platformY;
-            obstacle.setTexture("bigObstacle");
+            obstacle.y = platformY - yOffset;
+            obstacle.setTexture("biggestobstacle");
             obstacle.setActive(true);
             obstacle.setVisible(true);
-            // Make it even longer and rectangular
-            obstacle.displayWidth = 370; // Was 320, now longer
-            obstacle.displayHeight = 65; // Slightly taller if you want
+            obstacle.displayWidth = 320;
+            obstacle.displayHeight = 90;
         } else {
-            obstacle = this.physics.add.sprite(posX, platformY, "bigObstacle");
+            obstacle = this.physics.add.sprite(posX, platformY - yOffset, "biggestobstacle");
             obstacle.setImmovable(true);
-            obstacle.displayWidth = 370; // Was 320, now longer
-            obstacle.displayHeight = 65;
+            obstacle.displayWidth = 320;
+            obstacle.displayHeight = 90;
         }
         this.obstacleGroup.add(obstacle);
 
-        // Only spawn a drone if there isn't one at this X
         let droneExists = false;
         this.droneGroup.getChildren().forEach(drone => {
             if (drone.active && Math.abs(drone.x - posX) < 5) droneExists = true;
@@ -285,12 +312,9 @@ export default class HelloWorldScene extends Phaser.Scene {
     }
 
     addDrone(posX, posY) {
-        
         let drone = this.droneGroup.create(posX, posY, "drone");
         drone.setImmovable(true);
-        
-        drone.setScale(0.8); 
-        
+        drone.setScale(0.8);
         drone.body.allowGravity = false;
         drone.collected = false;
     }
@@ -301,7 +325,6 @@ export default class HelloWorldScene extends Phaser.Scene {
             drone.setVisible(false);
             drone.setActive(false);
             this.canTripleJump = true;
-            // If the player is in the air, set playerJumps to 1
             if (!this.player.body.touching.down) {
                 this.playerJumps = 1;
             }
@@ -319,8 +342,6 @@ export default class HelloWorldScene extends Phaser.Scene {
             this.playerJumps ++;
             this.isJumping = true;
             this.jumpTimer = 0;
-
-          
             if (this.canTripleJump && this.playerJumps === 3) {
                 this.canTripleJump = false;
             }
@@ -339,11 +360,31 @@ export default class HelloWorldScene extends Phaser.Scene {
             this.gameOverText.setVisible(true);
             this.restartText.setVisible(true);
 
-            // Restart the game on "R" key press
-            if (this.input.keyboard.checkDown(this.input.keyboard.addKey('R'), 250)) {
+            if (Phaser.Input.Keyboard.JustDown(this.keyR)) {
                 this.scene.restart();
             }
-            return; // <--- Prevents any further movement or spawning
+            return;
+        }
+
+        // --- INTRO ROOM LOGIC ---
+        if (this.inIntroRoom) {
+            // Blinking effect: visible for 500ms, hidden for 500ms
+            const blink = Math.floor(this.time.now / 500) % 2 === 0;
+            this.startText.setVisible(blink);
+
+            if (
+                Phaser.Input.Keyboard.JustDown(this.cursors.up) ||
+                Phaser.Input.Keyboard.JustDown(this.keyW) ||
+                Phaser.Input.Keyboard.JustDown(this.keySpace) ||
+                this.input.activePointer.isDown
+            ) {
+                this.inIntroRoom = false;
+                this.startText.setVisible(false);
+                this.player.setTexture("playerRunning"); // Switch to running sprite
+            }
+            return;
+        } else {
+            if (this.startText) this.startText.setVisible(false);
         }
 
         const config = this.sys.game.config;
@@ -352,8 +393,11 @@ export default class HelloWorldScene extends Phaser.Scene {
         }
         this.player.x = gameOptions.playerStartPosition;
 
-        // Jump logic (unchanged)
-        if (Phaser.Input.Keyboard.JustDown(this.cursors.up) || Phaser.Input.Keyboard.JustDown(this.cursors.space)) {
+        // Jump logic
+        if (Phaser.Input.Keyboard.JustDown(this.cursors.up) ||
+            Phaser.Input.Keyboard.JustDown(this.keyW) ||
+            Phaser.Input.Keyboard.JustDown(this.keySpace)
+        ) {
             this.jump();
         }
         const jumpKeyDown = this.cursors.up.isDown || this.cursors.space.isDown;
@@ -363,7 +407,7 @@ export default class HelloWorldScene extends Phaser.Scene {
             this.jumpTimer < this.maxJumpTime &&
             this.player.body.velocity.y < 0
         ) {
-            this.player.setVelocityY(this.player.body.velocity.y - 7); // Lower jump hold power
+            this.player.setVelocityY(this.player.body.velocity.y - 7);
             this.jumpTimer += this.game.loop.delta;
         } else {
             if (!jumpKeyDown || this.jumpTimer >= this.maxJumpTime || this.player.body.velocity.y >= 0) {
@@ -373,23 +417,70 @@ export default class HelloWorldScene extends Phaser.Scene {
         if (this.player.body.touching.down) {
             this.isJumping = false;
             this.jumpTimer = 0;
-            this.canTripleJump = false; // <-- Reset triple jump when landing!
+            this.canTripleJump = false;
         }
 
         // Move and loop the platforms
-        const speed = this.currentPlatformSpeed * this.game.loop.delta / 1000;
+        let speed = this.currentPlatformSpeed * this.game.loop.delta / 1000;
+
+        // Find the rightmost platform's right edge
+        let rightmostEdge = -Infinity;
         this.platforms.children.iterate(platform => {
             platform.x -= speed;
-            if (platform.x + platform.displayWidth < 0) {
-                let rightmost = 0;
-                this.platforms.children.iterate(p => {
-                    if (p.x > rightmost) rightmost = p.x;
-                });
-                platform.x = rightmost + platform.displayWidth;
+            let platformRight = platform.x + platform.displayWidth;
+            if (platformRight > rightmostEdge) {
+                rightmostEdge = platformRight;
             }
         });
 
-        // Move obstacles left and remove off-screen ones
+        // Reposition platforms that go off screen and spawn doors/windows
+        this.platforms.children.iterate(platform => {
+            if (platform.x + platform.displayWidth < 0) {
+                platform.x = rightmostEdge;
+                rightmostEdge = platform.x + platform.displayWidth;
+
+                // 20% chance to spawn a door decoration ON TOP OF THE PLATFORM
+                if (Phaser.Math.Between(0, 4) === 0) {
+                    platform.doorSprite = this.add.image(
+                        platform.x + 100,
+                        platform.y - 40,
+                        'door'
+                    );
+                    platform.doorSprite.setOrigin(0.5, 1);
+                    platform.doorSprite.setScale(3.2);
+                    platform.doorSprite.setDepth(-10);
+                    platform.doorOffsetX = 100;
+                    this.textures.get('door').setFilter(Phaser.Textures.FilterMode.NEAREST);
+                } else {
+                    if (platform.doorSprite) {
+                        platform.doorSprite.destroy();
+                        platform.doorSprite = null;
+                    }
+                }
+
+                // 20% chance to spawn a window on the wall (background)
+                if (Phaser.Math.Between(0, 4) === 0) {
+                    const wallY = 80;
+                    const wallX = platform.x + 80; // match the update logic
+                    platform.windowSprite = this.add.image(
+                        wallX,
+                        wallY,
+                        'window'
+                    );
+                    platform.windowSprite.setOrigin(0, 0);
+                    platform.windowSprite.setDepth(-20);
+                    platform.windowSprite.setScale(0.55); // slightly smaller
+                    this.textures.get('window').setFilter(Phaser.Textures.FilterMode.NEAREST);
+                } else {
+                    if (platform.windowSprite) {
+                        platform.windowSprite.destroy();
+                        platform.windowSprite = null;
+                    }
+                }
+            }
+        });
+
+        // Move obstacles left at the same speed as platforms
         let toRemove = [];
         this.obstacleGroup.children.iterate(obstacle => {
             obstacle.x -= speed;
@@ -421,16 +512,14 @@ export default class HelloWorldScene extends Phaser.Scene {
         // Obstacle spawning logic (random small or big)
         this.obstacleDistance += speed;
         if (
-            this.obstacleDistance > 150 && // 150 pixels since last spawn
-            Phaser.Math.Between(0, 100) < 4 // Chance
+            this.obstacleDistance > 150 &&
+            Phaser.Math.Between(0, 100) < 4
         ) {
-            // Only spawn if there are no active obstacles
             let anyActiveObstacle = false;
             this.obstacleGroup.getChildren().forEach(obj => {
                 if (obj.active) anyActiveObstacle = true;
             });
             if (!anyActiveObstacle) {
-                // Find the rightmost platform
                 let rightmostPlatform = null;
                 let rightmostX = -Infinity;
                 this.platforms.children.iterate(platform => {
@@ -466,24 +555,20 @@ export default class HelloWorldScene extends Phaser.Scene {
         let playerInAir = !this.player.body.touching.down;
 
         // Randomly trigger flash if not already flashing
-        if ((noObstacles || playerInAir) && !this.isFlashing && Phaser.Math.Between(0, 1000) < 2 && this.player.body.touching.down // Only allow hiding if on ground
-) {
+        if ((noObstacles || playerInAir) && !this.isFlashing && Phaser.Math.Between(0, 1000) < 2 && this.player.body.touching.down) {
             this.isFlashing = true;
             this.flashTimer = 0;
             this.mustHide = true;
             this.flashOverlay.fillColor = 0x000000;
-            this.flashOverlay.fillAlpha = 0.5; // Slightly black
+            this.flashOverlay.fillAlpha = 0.5;
             this.hideText.setVisible(true);
         }
 
         if (this.isFlashing) {
             this.flashTimer += this.game.loop.delta;
-
-            // Show overlay and text
             this.flashOverlay.fillAlpha = 0.5;
             this.hideText.setVisible(true);
 
-            // End after 2 seconds
             if (this.flashTimer > 2000) {
                 this.isFlashing = false;
                 this.flashOverlay.fillAlpha = 0;
@@ -509,21 +594,9 @@ export default class HelloWorldScene extends Phaser.Scene {
             this.currentPlatformSpeed = this.maxPlatformSpeed;
         }
 
-        // Move and loop the platforms with increased speed
-        this.platforms.children.iterate(platform => {
-            platform.x -= this.currentPlatformSpeed * this.game.loop.delta / 1000;
-            if (platform.x + platform.displayWidth < 0) {
-                let rightmost = 0;
-                this.platforms.children.iterate(p => {
-                    if (p.x > rightmost) rightmost = p.x;
-                });
-                platform.x = rightmost + platform.displayWidth;
-            }
-        });
-
         // Score increases faster (every 100ms, +1 point per tick)
         this.scoreTimer += this.game.loop.delta;
-        if (this.scoreTimer >= 100) { // 100 ms per tick
+        if (this.scoreTimer >= 100) {
             this.score += 1;
             this.scoreText.setText(this.padScore(this.score));
             this.scoreLabel.x = this.rightEdge - this.scoreText.width - this.labelValueGap;
@@ -541,13 +614,62 @@ export default class HelloWorldScene extends Phaser.Scene {
             this.hiLabel.x = this.rightEdge - this.highScoreText.width - this.labelValueGap;
         }
 
-        // Game over logic
+        // Game over logic (redundant, but safe)
         if (this.isGameOver) {
             this.gameOverText.setVisible(true);
             this.restartText.setVisible(true);
+            if (Phaser.Input.Keyboard.JustDown(this.keyR)) {
+                this.scene.restart();
+            }
+        }
 
-            // Restart the game on "R" key press
-            if (Phaser.Input.Keyboard.JustDown(this.cursors.down)) {
+        // Move door and window with platform
+        const firstPlatform = this.platforms.getChildren()[0];
+        const ninjaOffset = this.player.x - firstPlatform.x;
+        this.platforms.children.iterate(platform => {
+            if (platform.doorSprite) {
+                platform.doorSprite.x = platform.x + (platform.doorOffsetX || 0);
+                platform.doorSprite.y = platform.y - 40;
+            }
+            if (platform.windowSprite) {
+                // Attach window to a fixed offset from the platform's LEFT edge
+                platform.windowSprite.x = platform.x + 80; // 80px from platform's left edge
+                platform.windowSprite.y = 80; // fixed Y
+                platform.windowSprite.setScale(0.55); // slightly smaller
+            }
+        });
+
+        // Increase platform speed over time, up to a max speed
+        this.currentPlatformSpeed += this.platformSpeedIncrease * (this.game.loop.delta / 1000);
+        if (this.currentPlatformSpeed > this.maxPlatformSpeed) {
+            this.currentPlatformSpeed = this.maxPlatformSpeed;
+        }
+
+        // Score increases faster (every 100ms, +1 point per tick)
+        this.scoreTimer += this.game.loop.delta;
+        if (this.scoreTimer >= 100) {
+            this.score += 1;
+            this.scoreText.setText(this.padScore(this.score));
+            this.scoreLabel.x = this.rightEdge - this.scoreText.width - this.labelValueGap;
+            this.hiLabel.x = this.rightEdge - this.highScoreText.width - this.labelValueGap;
+
+            this.highScoreText.setText(this.padScore(this.highScore));
+            this.scoreTimer = 0;
+        }
+
+        // Check and update high score
+        if (this.score > this.highScore) {
+            this.highScore = this.score;
+            localStorage.setItem('highScore', this.highScore);
+            this.highScoreText.setText(this.padScore(this.highScore));
+            this.hiLabel.x = this.rightEdge - this.highScoreText.width - this.labelValueGap;
+        }
+
+        // Game over logic (redundant, but safe)
+        if (this.isGameOver) {
+            this.gameOverText.setVisible(true);
+            this.restartText.setVisible(true);
+            if (Phaser.Input.Keyboard.JustDown(this.keyR)) {
                 this.scene.restart();
             }
         }
@@ -564,6 +686,7 @@ export default class HelloWorldScene extends Phaser.Scene {
     }
 }
 
+// Responsive canvas resize
 function resize(){
     let canvas = document.querySelector("canvas");
     let windowWidth = window.innerWidth;
@@ -580,7 +703,7 @@ function resize(){
     }
 }
 
-/* Add the CSS styles directly in the JavaScript file */
+// Add the CSS styles directly in the JavaScript file
 const style = document.createElement('style');
 style.innerHTML = `
 body {
@@ -591,10 +714,18 @@ body {
     align-items: center;
     justify-content: center;
     height: 100vh;
+}
 canvas {
     display: block;
-    margin: auto;k;
-}   margin: auto;
+    margin: auto;
+}
 `;
 document.head.appendChild(style);
-document.head.appendChild(style);
+
+// Phaser config (example, adjust as needed)
+const config = {
+    // ...other config...
+    render: {
+        pixelArt: true
+    }
+};

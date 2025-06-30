@@ -26,13 +26,12 @@ const config = {
     width: 1334,
     height: 750,
     scene: [HelloWorldScene],
-    backgroundColor: 0x444444,
-
+    backgroundColor: 0x11173B, 
     // physics settings
     physics: {
         default: "arcade",
         arcade: {
-          debug: true,
+          debug: false,
           
         }
     }
