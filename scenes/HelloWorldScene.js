@@ -108,26 +108,50 @@ export default class HelloWorldScene extends Phaser.Scene {
         this.highScore = localStorage.getItem('highScore') ? parseInt(localStorage.getItem('highScore')) : 0;
         this.scoreTimer = 0;
 
-        // Score label (right-aligned, just before the score)
-        this.scoreLabel = this.add.text(
-            this.sys.game.config.width - 160, 20,
-            "SCORE",
-            { font: '24px Arial', fill: '#fff', align: 'right' }
-        ).setOrigin(1, 0);
+        // Padding and layout constants
+        const padding = 30;
+        this.labelValueGap = 16; // space between label and value
+        const topY = 20;
+        const lineGap = 32;
 
-        // Score text (right-aligned, after the label)
+        this.rightEdge = this.sys.game.config.width - 30;
+
+        // Score value (right-aligned, flush with right edge)
         this.scoreText = this.add.text(
-            this.sys.game.config.width - 30, 20,
+            this.rightEdge, topY,
             this.padScore(this.score),
             { fontFamily: 'PublicPixel', fontSize: '24px', fill: '#fff', align: 'right' }
         ).setOrigin(1, 0);
 
-        // High score text (left-aligned with SCORE label, below the score)
+        // SCORE label (to the left of the score number)
+        this.scoreLabel = this.add.text(
+            this.rightEdge - this.scoreText.width - this.labelValueGap, topY,
+            "SCORE",
+            { fontFamily: 'PublicPixel', fontSize: '24px', fill: '#fff', align: 'right' }
+        ).setOrigin(1, 0);
+
+        // High score value (right-aligned, flush with right edge)
         this.highScoreText = this.add.text(
-            this.sys.game.config.width - 160, 50, // <-- align X with scoreLabel
-            "HI " + this.padScore(this.highScore),
-            { fontFamily: 'PublicPixel', fontSize: '20px', fill: '#fff', align: 'left' }
-        ).setOrigin(0, 0); // <-- left align
+            this.rightEdge, topY + lineGap,
+            this.padScore(this.highScore),
+            { fontFamily: 'PublicPixel', fontSize: '20px', fill: '#fff', align: 'right' }
+        ).setOrigin(1, 0);
+
+        // HI label (to the left of the high score number)
+        this.hiLabel = this.add.text(
+            this.rightEdge - this.highScoreText.width - this.labelValueGap, topY + lineGap,
+            "HI",
+            { fontFamily: 'PublicPixel', fontSize: '20px', fill: '#fff', align: 'right' }
+        ).setOrigin(1, 0);
+
+        this.hideText = this.add.text(
+            this.sys.game.config.width / 2,
+            this.sys.game.config.height / 2,
+            "HIDE",
+            { fontFamily: 'PublicPixel', fontSize: '64px', fill: '#fff' }
+        ).setOrigin(0.5, 0.5);
+        this.hideText.setDepth(1001);
+        this.hideText.setVisible(false);
     }
 
     // Removed obstacle spawning from addPlatform!
@@ -413,25 +437,24 @@ export default class HelloWorldScene extends Phaser.Scene {
         if ((noObstacles || playerInAir) && !this.isFlashing && Phaser.Math.Between(0, 1000) < 2) {
             this.isFlashing = true;
             this.flashTimer = 0;
-            this.flashColor = 0xffffff;
             this.mustHide = true;
+            this.flashOverlay.fillColor = 0x000000;
+            this.flashOverlay.fillAlpha = 0.5; // Slightly black
+            this.hideText.setVisible(true);
         }
 
         if (this.isFlashing) {
             this.flashTimer += this.game.loop.delta;
 
-            // Only switch color every 200ms (adjust as needed)
-            if (this.flashTimer - this.lastFlashSwitch > 200) {
-                this.flashColor = (this.flashColor === 0xffffff) ? 0x000000 : 0xffffff;
-                this.flashOverlay.fillColor = this.flashColor;
-                this.lastFlashSwitch = this.flashTimer;
-            }
-            this.flashOverlay.fillAlpha = 0.7;
+            // Show overlay and text
+            this.flashOverlay.fillAlpha = 0.5;
+            this.hideText.setVisible(true);
 
-            // Flash for 2 seconds (2000 ms)
+            // End after 2 seconds
             if (this.flashTimer > 2000) {
                 this.isFlashing = false;
                 this.flashOverlay.fillAlpha = 0;
+                this.hideText.setVisible(false);
                 if (this.mustHide) {
                     this.scene.restart();
                 }
@@ -439,8 +462,12 @@ export default class HelloWorldScene extends Phaser.Scene {
             if (this.cursors.down.isDown) {
                 this.mustHide = false;
                 this.flashOverlay.fillAlpha = 0;
+                this.hideText.setVisible(false);
                 this.isFlashing = false;
             }
+        } else {
+            this.hideText.setVisible(false);
+            this.flashOverlay.fillAlpha = 0;
         }
 
         // Increase platform speed over time, up to a max speed
@@ -466,6 +493,10 @@ export default class HelloWorldScene extends Phaser.Scene {
         if (this.scoreTimer >= 100) { // 100 ms per tick
             this.score += 1;
             this.scoreText.setText(this.padScore(this.score));
+            this.scoreLabel.x = this.rightEdge - this.scoreText.width - this.labelValueGap;
+            this.hiLabel.x = this.rightEdge - this.highScoreText.width - this.labelValueGap;
+
+            this.highScoreText.setText(this.padScore(this.highScore));
             this.scoreTimer = 0;
         }
 
@@ -473,7 +504,8 @@ export default class HelloWorldScene extends Phaser.Scene {
         if (this.score > this.highScore) {
             this.highScore = this.score;
             localStorage.setItem('highScore', this.highScore);
-            this.highScoreText.setText("HI " + this.padScore(this.highScore));
+            this.highScoreText.setText(this.padScore(this.highScore));
+            this.hiLabel.x = this.rightEdge - this.highScoreText.width - this.labelValueGap;
         }
     }
 }
@@ -505,10 +537,10 @@ body {
     align-items: center;
     justify-content: center;
     height: 100vh;
-}
 canvas {
     display: block;
-    margin: auto;
-}
+    margin: auto;k;
+}   margin: auto;
 `;
+document.head.appendChild(style);
 document.head.appendChild(style);
