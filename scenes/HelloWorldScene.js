@@ -21,6 +21,7 @@ export default class HelloWorldScene extends Phaser.Scene {
         this.load.image("player", "./public/assets/Ninja.png");
         this.load.image("obstacle", "./public/assets/diamond.png");
         this.load.image("bigObstacle", "./public/assets/square.png");
+        this.load.image("drone", "./public/assets/triangle.png");
     }
 
     create() {
@@ -59,6 +60,7 @@ export default class HelloWorldScene extends Phaser.Scene {
         // Obstacles group
         this.obstacleGroup = this.add.group();
         this.obstaclePool = this.add.group();
+        this.droneGroup = this.physics.add.group(); // <-- add this line
 
         this.playerJumps = 0;
         this.isJumping = false;
@@ -76,6 +78,26 @@ export default class HelloWorldScene extends Phaser.Scene {
         this.physics.add.collider(this.player, this.obstacleGroup, () => {
             this.scene.restart();
         }, null, this);
+
+        this.physics.add.overlap(this.player, this.droneGroup, this.collectDrone, null, this);
+        this.canTripleJump = false;
+
+        // Flash overlay for damage indication
+        this.flashOverlay = this.add.rectangle(
+            this.sys.game.config.width / 2,
+            this.sys.game.config.height / 2,
+            this.sys.game.config.width,
+            this.sys.game.config.height,
+            0xffffff,
+            0 // Start transparent
+        );
+        this.flashOverlay.setDepth(1000); // On top of everything
+        this.isFlashing = false;
+        this.flashTimer = 0;
+        this.flashColor = 0xffffff;
+        this.mustHide = false;
+
+        this.lastFlashSwitch = 0;
     }
 
     // Removed obstacle spawning from addPlatform!
@@ -148,8 +170,62 @@ export default class HelloWorldScene extends Phaser.Scene {
         this.obstacleGroup.add(obstacle);
     }
 
+    addBiggestObstacle(posX, platformY) {
+        let obstacle = null;
+        this.obstaclePool.getChildren().forEach(obj => {
+            if (!obstacle && !obj.active) obstacle = obj;
+        });
+        if(obstacle){
+            this.obstaclePool.remove(obstacle);
+            this.obstacleGroup.remove(obstacle);
+            obstacle.x = posX;
+            obstacle.y = platformY;
+            obstacle.setTexture("bigObstacle");
+            obstacle.setActive(true);
+            obstacle.setVisible(true);
+            // Make it even longer and rectangular
+            obstacle.displayWidth = 320; // Much longer
+            obstacle.displayHeight = 60;
+        } else {
+            obstacle = this.physics.add.sprite(posX, platformY, "bigObstacle");
+            obstacle.setImmovable(true);
+            obstacle.displayWidth = 320; // Much longer
+            obstacle.displayHeight = 60;
+        }
+        this.obstacleGroup.add(obstacle);
+
+        // Only spawn a drone if there isn't one at this X
+        let droneExists = false;
+        this.droneGroup.getChildren().forEach(drone => {
+            if (drone.active && Math.abs(drone.x - posX) < 5) droneExists = true;
+        });
+        if (!droneExists) {
+            this.addDrone(posX, platformY - 100);
+        }
+    }
+
+    addDrone(posX, posY) {
+        // Always use the existing group
+        let drone = this.droneGroup.create(posX, posY, "drone");
+        drone.setImmovable(true);
+        drone.setScale(0.5);
+        drone.body.allowGravity = false;
+        drone.collected = false;
+    }
+
+    collectDrone(player, drone) {
+        if (!drone.collected) {
+            drone.collected = true;
+            drone.setVisible(false);
+            drone.setActive(false);
+            this.canTripleJump = true;
+        }
+    }
+
     jump(){
-        if(this.player.body.touching.down || (this.playerJumps > 0 && this.playerJumps < gameOptions.jumps)){
+        let maxJumps = gameOptions.jumps;
+        if (this.canTripleJump) maxJumps = 3;
+        if(this.player.body.touching.down || (this.playerJumps > 0 && this.playerJumps < maxJumps)){
             if(this.player.body.touching.down){
                 this.playerJumps = 0;
             }
@@ -218,6 +294,20 @@ export default class HelloWorldScene extends Phaser.Scene {
             this.obstacleGroup.remove(obstacle);
         });
 
+        // Move drones left and remove off-screen ones
+        let dronesToRemove = [];
+        this.droneGroup.children.iterate(drone => {
+            drone.x -= speed;
+            if (drone.x + drone.displayWidth < 0) {
+                drone.setActive(false);
+                drone.setVisible(false);
+                dronesToRemove.push(drone);
+            }
+        });
+        dronesToRemove.forEach(drone => {
+            this.droneGroup.remove(drone, true, true);
+        });
+
         // Obstacle spawning logic (random small or big)
         this.obstacleDistance += speed;
         if (
@@ -241,16 +331,61 @@ export default class HelloWorldScene extends Phaser.Scene {
                 });
                 if (rightmostPlatform) {
                     const spawnX = rightmostPlatform.x + rightmostPlatform.displayWidth / 2;
-                    if (Phaser.Math.Between(0, 1) === 0) {
-                        const spawnY = rightmostPlatform.y - 60; // Small obstacle
+                    const rand = Phaser.Math.Between(0, 9);
+                    if (rand < 4) {
+                        const spawnY = rightmostPlatform.y - 60;
                         this.addObstacle(spawnX, spawnY, rightmostPlatform.displayWidth);
-                    } else {
-                        const spawnY = rightmostPlatform.y - 100; // Higher for big obstacle
+                    } else if (rand < 8) {
+                        const spawnY = rightmostPlatform.y - 100;
                         this.addBigObstacle(spawnX, spawnY);
+                    } else {
+                        const spawnY = rightmostPlatform.y - 120;
+                        this.addBiggestObstacle(spawnX, spawnY);
                     }
                     this.lastObstacleSpawnX = spawnX;
                     this.obstacleDistance = 0;
                 }
+            }
+        }
+
+        // Check for no obstacles or player in air
+        let noObstacles = true;
+        this.obstacleGroup.getChildren().forEach(obj => {
+            if (obj.active) noObstacles = false;
+        });
+        let playerInAir = !this.player.body.touching.down;
+
+        // Randomly trigger flash if not already flashing
+        if ((noObstacles || playerInAir) && !this.isFlashing && Phaser.Math.Between(0, 1000) < 2) {
+            this.isFlashing = true;
+            this.flashTimer = 0;
+            this.flashColor = 0xffffff;
+            this.mustHide = true;
+        }
+
+        if (this.isFlashing) {
+            this.flashTimer += this.game.loop.delta;
+
+            // Only switch color every 200ms (adjust as needed)
+            if (this.flashTimer - this.lastFlashSwitch > 200) {
+                this.flashColor = (this.flashColor === 0xffffff) ? 0x000000 : 0xffffff;
+                this.flashOverlay.fillColor = this.flashColor;
+                this.lastFlashSwitch = this.flashTimer;
+            }
+            this.flashOverlay.fillAlpha = 0.7;
+
+            // Flash for 2 seconds (2000 ms)
+            if (this.flashTimer > 2000) {
+                this.isFlashing = false;
+                this.flashOverlay.fillAlpha = 0;
+                if (this.mustHide) {
+                    this.scene.restart();
+                }
+            }
+            if (this.cursors.down.isDown) {
+                this.mustHide = false;
+                this.flashOverlay.fillAlpha = 0;
+                this.isFlashing = false;
             }
         }
     }
