@@ -98,6 +98,36 @@ export default class HelloWorldScene extends Phaser.Scene {
         this.mustHide = false;
 
         this.lastFlashSwitch = 0;
+
+        this.currentPlatformSpeed = gameOptions.platformStartSpeed;
+        this.platformSpeedIncrease = 5; // Speed increase per second (tweak as needed)
+        this.maxPlatformSpeed = 900;    // Optional: set a max speed
+
+        // Score variables
+        this.score = 0;
+        this.highScore = localStorage.getItem('highScore') ? parseInt(localStorage.getItem('highScore')) : 0;
+        this.scoreTimer = 0;
+
+        // Score label (right-aligned, just before the score)
+        this.scoreLabel = this.add.text(
+            this.sys.game.config.width - 160, 20,
+            "SCORE",
+            { font: '24px Arial', fill: '#fff', align: 'right' }
+        ).setOrigin(1, 0);
+
+        // Score text (right-aligned, after the label)
+        this.scoreText = this.add.text(
+            this.sys.game.config.width - 30, 20,
+            this.padScore(this.score),
+            { fontFamily: 'PublicPixel', fontSize: '24px', fill: '#fff', align: 'right' }
+        ).setOrigin(1, 0);
+
+        // High score text (left-aligned with SCORE label, below the score)
+        this.highScoreText = this.add.text(
+            this.sys.game.config.width - 160, 50, // <-- align X with scoreLabel
+            "HI " + this.padScore(this.highScore),
+            { fontFamily: 'PublicPixel', fontSize: '20px', fill: '#fff', align: 'left' }
+        ).setOrigin(0, 0); // <-- left align
     }
 
     // Removed obstacle spawning from addPlatform!
@@ -136,13 +166,16 @@ export default class HelloWorldScene extends Phaser.Scene {
             obstacle.x = posX;
             obstacle.y = platformY;
             obstacle.setTexture("obstacle");
-            obstacle.setScale(0.4);
             obstacle.setActive(true);
             obstacle.setVisible(true);
+            // Make it rectangular and longer
+            obstacle.displayWidth = 80;   // Adjust as needed for jumpability
+            obstacle.displayHeight = 40;  // Adjust as needed
         } else {
             obstacle = this.physics.add.sprite(posX, platformY, "obstacle");
             obstacle.setImmovable(true);
-            obstacle.setScale(0.4);
+            obstacle.displayWidth = 80;
+            obstacle.displayHeight = 40;
         }
         this.obstacleGroup.add(obstacle);
     }
@@ -159,13 +192,16 @@ export default class HelloWorldScene extends Phaser.Scene {
             obstacle.x = posX;
             obstacle.y = platformY;
             obstacle.setTexture("bigObstacle");
-            obstacle.setScale(0.7);
             obstacle.setActive(true);
             obstacle.setVisible(true);
+            // Make it more rectangular and longer
+            obstacle.displayWidth = 140;  // Adjust as needed for jumpability
+            obstacle.displayHeight = 50;  // Adjust as needed
         } else {
             obstacle = this.physics.add.sprite(posX, platformY, "bigObstacle");
             obstacle.setImmovable(true);
-            obstacle.setScale(0.7);
+            obstacle.displayWidth = 140;
+            obstacle.displayHeight = 50;
         }
         this.obstacleGroup.add(obstacle);
     }
@@ -184,13 +220,13 @@ export default class HelloWorldScene extends Phaser.Scene {
             obstacle.setActive(true);
             obstacle.setVisible(true);
             // Make it even longer and rectangular
-            obstacle.displayWidth = 320; // Much longer
-            obstacle.displayHeight = 60;
+            obstacle.displayWidth = 370; // Was 320, now longer
+            obstacle.displayHeight = 65; // Slightly taller if you want
         } else {
             obstacle = this.physics.add.sprite(posX, platformY, "bigObstacle");
             obstacle.setImmovable(true);
-            obstacle.displayWidth = 320; // Much longer
-            obstacle.displayHeight = 60;
+            obstacle.displayWidth = 370; // Was 320, now longer
+            obstacle.displayHeight = 65;
         }
         this.obstacleGroup.add(obstacle);
 
@@ -205,10 +241,12 @@ export default class HelloWorldScene extends Phaser.Scene {
     }
 
     addDrone(posX, posY) {
-        // Always use the existing group
+        
         let drone = this.droneGroup.create(posX, posY, "drone");
         drone.setImmovable(true);
-        drone.setScale(0.5);
+        
+        drone.setScale(0.8); 
+        
         drone.body.allowGravity = false;
         drone.collected = false;
     }
@@ -219,6 +257,10 @@ export default class HelloWorldScene extends Phaser.Scene {
             drone.setVisible(false);
             drone.setActive(false);
             this.canTripleJump = true;
+            // If the player is in the air, set playerJumps to 1
+            if (!this.player.body.touching.down) {
+                this.playerJumps = 1;
+            }
         }
     }
 
@@ -233,7 +275,18 @@ export default class HelloWorldScene extends Phaser.Scene {
             this.playerJumps ++;
             this.isJumping = true;
             this.jumpTimer = 0;
+
+          
+            if (this.canTripleJump && this.playerJumps === 3) {
+                this.canTripleJump = false;
+            }
         }
+    }
+
+    padScore(num, size = 6) {
+        let s = num + "";
+        while (s.length < size) s = "0" + s;
+        return s;
     }
 
     update() {
@@ -254,7 +307,7 @@ export default class HelloWorldScene extends Phaser.Scene {
             this.jumpTimer < this.maxJumpTime &&
             this.player.body.velocity.y < 0
         ) {
-            this.player.setVelocityY(this.player.body.velocity.y - 15);
+            this.player.setVelocityY(this.player.body.velocity.y - 7); // Lower jump hold power
             this.jumpTimer += this.game.loop.delta;
         } else {
             if (!jumpKeyDown || this.jumpTimer >= this.maxJumpTime || this.player.body.velocity.y >= 0) {
@@ -264,10 +317,11 @@ export default class HelloWorldScene extends Phaser.Scene {
         if (this.player.body.touching.down) {
             this.isJumping = false;
             this.jumpTimer = 0;
+            this.canTripleJump = false; // <-- Reset triple jump when landing!
         }
 
         // Move and loop the platforms
-        const speed = gameOptions.platformStartSpeed * this.game.loop.delta / 1000;
+        const speed = this.currentPlatformSpeed * this.game.loop.delta / 1000;
         this.platforms.children.iterate(platform => {
             platform.x -= speed;
             if (platform.x + platform.displayWidth < 0) {
@@ -388,6 +442,39 @@ export default class HelloWorldScene extends Phaser.Scene {
                 this.isFlashing = false;
             }
         }
+
+        // Increase platform speed over time, up to a max speed
+        this.currentPlatformSpeed += this.platformSpeedIncrease * (this.game.loop.delta / 1000);
+        if (this.currentPlatformSpeed > this.maxPlatformSpeed) {
+            this.currentPlatformSpeed = this.maxPlatformSpeed;
+        }
+
+        // Move and loop the platforms with increased speed
+        this.platforms.children.iterate(platform => {
+            platform.x -= this.currentPlatformSpeed * this.game.loop.delta / 1000;
+            if (platform.x + platform.displayWidth < 0) {
+                let rightmost = 0;
+                this.platforms.children.iterate(p => {
+                    if (p.x > rightmost) rightmost = p.x;
+                });
+                platform.x = rightmost + platform.displayWidth;
+            }
+        });
+
+        // Score increases faster (every 100ms, +1 point per tick)
+        this.scoreTimer += this.game.loop.delta;
+        if (this.scoreTimer >= 100) { // 100 ms per tick
+            this.score += 1;
+            this.scoreText.setText(this.padScore(this.score));
+            this.scoreTimer = 0;
+        }
+
+        // Check and update high score
+        if (this.score > this.highScore) {
+            this.highScore = this.score;
+            localStorage.setItem('highScore', this.highScore);
+            this.highScoreText.setText("HI " + this.padScore(this.highScore));
+        }
     }
 }
 
@@ -406,3 +493,22 @@ function resize(){
         canvas.style.height = windowHeight + "px";
     }
 }
+
+/* Add the CSS styles directly in the JavaScript file */
+const style = document.createElement('style');
+style.innerHTML = `
+body {
+    background: #222;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}
+canvas {
+    display: block;
+    margin: auto;
+}
+`;
+document.head.appendChild(style);

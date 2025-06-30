@@ -39,9 +39,9 @@ const config = {
 };
 
 // Create a new Phaser game instance
-window.onload = function() {
+document.fonts.ready.then(() => {
     game = new Phaser.Game(config);
     window.focus();
     resize();
     window.addEventListener("resize", resize, false);
-};
+});
