@@ -19,62 +19,70 @@ export default class HelloWorldScene extends Phaser.Scene {
     preload() {
         this.load.image("platform", "./public/assets/platform.png");
         this.load.image("player", "./public/assets/Ninja.png");
-        this.load.image("obstacle", "./public/assets/diamond.png")
+        this.load.image("obstacle", "./public/assets/diamond.png");
+        this.load.image("bigObstacle", "./public/assets/square.png");
     }
 
     create() {
         const config = this.sys.game.config;
 
-        // Grupos de plataformas
-        this.platformGroup = this.add.group({
-            removeCallback: function(platform){
-                platform.scene.platformPool.add(platform)
-            }
-        });
-
-        this.platformPool = this.add.group({
-            removeCallback: function(platform){
-                platform.scene.platformGroup.add(platform)
-            }
-        });
-
-        this.obstacleGroup = this.add.group({
-            removeCallback: function(obstacle){
-                obstacle.scene.obstaclePool.add(obstacle)
-            }
-        });
-        this.obstaclePool = this.add.group({
-            removeCallback: function(obstacle){
-                obstacle.scene.obstacleGroup.add(obstacle)
-            }
-        });
-
-        this.playerJumps = 0;
-
-        // Plataforma inicial
-        this.addPlatform(config.width, config.width / 2);
-
         // Jugador
         this.player = this.physics.add.sprite(gameOptions.playerStartPosition, config.height / 2, "player");
         this.player.setGravityY(gameOptions.playerGravity);
-        this.player.setScale(0.25); // Escala más pequeña
+        this.player.setScale(0.25);
 
-        this.physics.add.collider(this.player, this.platformGroup);
+        // Create platforms group
+        this.platforms = this.physics.add.group();
+
+        const platformY = config.height * 0.7; // Platforms are now higher
+        const platformWidth = config.width * 1.5;
+
+        // First platform
+        let platform1 = this.platforms.create(0, platformY, "platform");
+        platform1.setOrigin(0, 0.1);
+        platform1.displayWidth = platformWidth;
+        platform1.displayHeight = 450; // Make platform thick (adjust value as needed)
+        platform1.setImmovable(true);
+        platform1.body.allowGravity = false;
+
+        // Second platform
+        let platform2 = this.platforms.create(platformWidth, platformY, "platform");
+        platform2.setOrigin(0, 0.1);
+        platform2.displayWidth = platformWidth;
+        platform2.displayHeight = 450;
+        platform2.setImmovable(true);
+        platform2.body.allowGravity = false;
+
+        // Add collider AFTER creating platforms
+        this.physics.add.collider(this.player, this.platforms);
+
+        // Obstacles group
+        this.obstacleGroup = this.add.group();
+        this.obstaclePool = this.add.group();
+
+        this.playerJumps = 0;
+        this.isJumping = false;
+        this.jumpTimer = 0;
+        this.maxJumpTime = 350;
+
+        this.lastObstacleX = 0;
+        this.lastObstacleSpawnX = 0;
+        this.minObstacleSpacing = 120; // Adjust as needed
+        this.obstacleDistance = 0;
+
+        this.input.on("pointerdown", this.jump, this);
+        this.cursors = this.input.keyboard.createCursorKeys();
 
         this.physics.add.collider(this.player, this.obstacleGroup, () => {
             this.scene.restart();
         }, null, this);
-
-        this.input.on("pointerdown", this.jump, this);
-
-        // NUEVO: Controles de teclado
-        this.cursors = this.input.keyboard.createCursorKeys();
     }
 
+    // Removed obstacle spawning from addPlatform!
     addPlatform(platformWidth, posX){
         const config = this.sys.game.config;
         let platform;
-        if(this.platformPool.getLength()){
+        if(this.platformPool && this.platformPool.getLength()){
             platform = this.platformPool.getFirst();
             platform.x = posX;
             platform.active = true;
@@ -85,38 +93,59 @@ export default class HelloWorldScene extends Phaser.Scene {
             platform = this.physics.add.sprite(posX, config.height * 0.8, "platform");
             platform.setImmovable(true);
             platform.setVelocityX(gameOptions.platformStartSpeed * -1);
-            this.platformGroup.add(platform);
+            if (this.platformGroup) {
+                this.platformGroup.add(platform);
+            }
         }
         platform.displayWidth = platformWidth;
         this.nextPlatformDistance = Phaser.Math.Between(gameOptions.spawnRange[0], gameOptions.spawnRange[1]);
-
-        // Probabilidad de generar un obstáculo en la plataforma
-        if (Phaser.Math.Between(0, 1)) {
-            this.addObstacle(
-                posX, 
-                platform.y, 
-                platformWidth
-            );
-        }
+        // No obstacle spawning here!
     }
 
     addObstacle(posX, platformY, platformWidth){
-        let obstacle;
-        if(this.obstaclePool.getLength()){
-            obstacle = this.obstaclePool.getFirst();
-            obstacle.x = posX;
-            obstacle.y = platformY - 40; // Ajusta la altura según el sprite
-            obstacle.active = true;
-            obstacle.visible = true;
+        let obstacle = null;
+        // Find an inactive obstacle in the pool
+        this.obstaclePool.getChildren().forEach(obj => {
+            if (!obstacle && !obj.active) obstacle = obj;
+        });
+        if(obstacle){
             this.obstaclePool.remove(obstacle);
+            this.obstacleGroup.remove(obstacle);
+            obstacle.x = posX;
+            obstacle.y = platformY;
+            obstacle.setTexture("obstacle");
+            obstacle.setScale(0.4);
+            obstacle.setActive(true);
+            obstacle.setVisible(true);
         } else {
-            obstacle = this.physics.add.sprite(posX, platformY - 40, "obstacle");
+            obstacle = this.physics.add.sprite(posX, platformY, "obstacle");
             obstacle.setImmovable(true);
-            obstacle.setVelocityX(gameOptions.platformStartSpeed * -1);
-            this.obstacleGroup.add(obstacle);
+            obstacle.setScale(0.4);
         }
-        // Opcional: escala o tamaño del obstáculo
-        obstacle.setScale(0.4);
+        this.obstacleGroup.add(obstacle);
+    }
+
+    addBigObstacle(posX, platformY) {
+        let obstacle = null;
+        // Find an inactive obstacle in the pool
+        this.obstaclePool.getChildren().forEach(obj => {
+            if (!obstacle && !obj.active) obstacle = obj;
+        });
+        if(obstacle){
+            this.obstaclePool.remove(obstacle);
+            this.obstacleGroup.remove(obstacle);
+            obstacle.x = posX;
+            obstacle.y = platformY;
+            obstacle.setTexture("bigObstacle");
+            obstacle.setScale(0.7);
+            obstacle.setActive(true);
+            obstacle.setVisible(true);
+        } else {
+            obstacle = this.physics.add.sprite(posX, platformY, "bigObstacle");
+            obstacle.setImmovable(true);
+            obstacle.setScale(0.7);
+        }
+        this.obstacleGroup.add(obstacle);
     }
 
     jump(){
@@ -126,36 +155,103 @@ export default class HelloWorldScene extends Phaser.Scene {
             }
             this.player.setVelocityY(gameOptions.jumpForce * -1);
             this.playerJumps ++;
+            this.isJumping = true;
+            this.jumpTimer = 0;
         }
     }
 
-    update(){
+    update() {
         const config = this.sys.game.config;
-        if(this.player.y > config.height){
+        if (this.player.y > config.height) {
             this.scene.restart();
         }
         this.player.x = gameOptions.playerStartPosition;
 
-        // NUEVO: Control de salto con teclado
+        // Jump logic (unchanged)
         if (Phaser.Input.Keyboard.JustDown(this.cursors.up) || Phaser.Input.Keyboard.JustDown(this.cursors.space)) {
             this.jump();
         }
-
-        let maxRight = 0;
-        this.platformGroup.getChildren().forEach(function(platform){
-            let rightEdge = platform.x + platform.displayWidth / 2;
-            if (rightEdge > maxRight) {
-                maxRight = rightEdge;
+        const jumpKeyDown = this.cursors.up.isDown || this.cursors.space.isDown;
+        if (
+            this.isJumping &&
+            jumpKeyDown &&
+            this.jumpTimer < this.maxJumpTime &&
+            this.player.body.velocity.y < 0
+        ) {
+            this.player.setVelocityY(this.player.body.velocity.y - 15);
+            this.jumpTimer += this.game.loop.delta;
+        } else {
+            if (!jumpKeyDown || this.jumpTimer >= this.maxJumpTime || this.player.body.velocity.y >= 0) {
+                this.isJumping = false;
             }
-            if(platform.x < - platform.displayWidth / 2){
-                this.platformGroup.killAndHide(platform);
-                this.platformGroup.remove(platform);
-            }
-        }, this);
+        }
+        if (this.player.body.touching.down) {
+            this.isJumping = false;
+            this.jumpTimer = 0;
+        }
 
-        if(maxRight < config.width){
-            var nextPlatformWidth = Phaser.Math.Between(gameOptions.platformSizeRange[0], gameOptions.platformSizeRange[1]);
-            this.addPlatform(nextPlatformWidth, maxRight + nextPlatformWidth / 2);
+        // Move and loop the platforms
+        const speed = gameOptions.platformStartSpeed * this.game.loop.delta / 1000;
+        this.platforms.children.iterate(platform => {
+            platform.x -= speed;
+            if (platform.x + platform.displayWidth < 0) {
+                let rightmost = 0;
+                this.platforms.children.iterate(p => {
+                    if (p.x > rightmost) rightmost = p.x;
+                });
+                platform.x = rightmost + platform.displayWidth;
+            }
+        });
+
+        // Move obstacles left and remove off-screen ones
+        let toRemove = [];
+        this.obstacleGroup.children.iterate(obstacle => {
+            obstacle.x -= speed;
+            if (obstacle.x + obstacle.displayWidth < 0) {
+                obstacle.setActive(false);
+                obstacle.setVisible(false);
+                this.obstaclePool.add(obstacle);
+                toRemove.push(obstacle);
+            }
+        });
+        toRemove.forEach(obstacle => {
+            this.obstacleGroup.remove(obstacle);
+        });
+
+        // Obstacle spawning logic (random small or big)
+        this.obstacleDistance += speed;
+        if (
+            this.obstacleDistance > 150 && // 150 pixels since last spawn
+            Phaser.Math.Between(0, 100) < 4 // Chance
+        ) {
+            // Only spawn if there are no active obstacles
+            let anyActiveObstacle = false;
+            this.obstacleGroup.getChildren().forEach(obj => {
+                if (obj.active) anyActiveObstacle = true;
+            });
+            if (!anyActiveObstacle) {
+                // Find the rightmost platform
+                let rightmostPlatform = null;
+                let rightmostX = -Infinity;
+                this.platforms.children.iterate(platform => {
+                    if (platform.x > rightmostX) {
+                        rightmostX = platform.x;
+                        rightmostPlatform = platform;
+                    }
+                });
+                if (rightmostPlatform) {
+                    const spawnX = rightmostPlatform.x + rightmostPlatform.displayWidth / 2;
+                    if (Phaser.Math.Between(0, 1) === 0) {
+                        const spawnY = rightmostPlatform.y - 60; // Small obstacle
+                        this.addObstacle(spawnX, spawnY, rightmostPlatform.displayWidth);
+                    } else {
+                        const spawnY = rightmostPlatform.y - 100; // Higher for big obstacle
+                        this.addBigObstacle(spawnX, spawnY);
+                    }
+                    this.lastObstacleSpawnX = spawnX;
+                    this.obstacleDistance = 0;
+                }
+            }
         }
     }
 }
