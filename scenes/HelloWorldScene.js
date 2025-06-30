@@ -76,7 +76,7 @@ export default class HelloWorldScene extends Phaser.Scene {
         this.cursors = this.input.keyboard.createCursorKeys();
 
         this.physics.add.collider(this.player, this.obstacleGroup, () => {
-            this.scene.restart();
+            this.gameOver();
         }, null, this);
 
         this.physics.add.overlap(this.player, this.droneGroup, this.collectDrone, null, this);
@@ -152,6 +152,26 @@ export default class HelloWorldScene extends Phaser.Scene {
         ).setOrigin(0.5, 0.5);
         this.hideText.setDepth(1001);
         this.hideText.setVisible(false);
+
+        // Game Over text
+        this.isGameOver = false;
+        this.gameOverText = this.add.text(
+            this.sys.game.config.width / 2,
+            this.sys.game.config.height / 2 - 40,
+            "GAME OVER",
+            { fontFamily: 'PublicPixel', fontSize: '48px', fill: '#fff' }
+        ).setOrigin(0.5, 0.5);
+        this.gameOverText.setDepth(2000);
+        this.gameOverText.setVisible(false);
+
+        this.restartText = this.add.text(
+            this.sys.game.config.width / 2,
+            this.sys.game.config.height / 2 + 20,
+            "Press R to restart",
+            { fontFamily: 'PublicPixel', fontSize: '24px', fill: '#fff' }
+        ).setOrigin(0.5, 0.5);
+        this.restartText.setDepth(2000);
+        this.restartText.setVisible(false);
     }
 
     // Removed obstacle spawning from addPlatform!
@@ -314,9 +334,21 @@ export default class HelloWorldScene extends Phaser.Scene {
     }
 
     update() {
+        // Freeze all game logic if game over
+        if (this.isGameOver) {
+            this.gameOverText.setVisible(true);
+            this.restartText.setVisible(true);
+
+            // Restart the game on "R" key press
+            if (this.input.keyboard.checkDown(this.input.keyboard.addKey('R'), 250)) {
+                this.scene.restart();
+            }
+            return; // <--- Prevents any further movement or spawning
+        }
+
         const config = this.sys.game.config;
         if (this.player.y > config.height) {
-            this.scene.restart();
+            this.gameOver();
         }
         this.player.x = gameOptions.playerStartPosition;
 
@@ -434,7 +466,8 @@ export default class HelloWorldScene extends Phaser.Scene {
         let playerInAir = !this.player.body.touching.down;
 
         // Randomly trigger flash if not already flashing
-        if ((noObstacles || playerInAir) && !this.isFlashing && Phaser.Math.Between(0, 1000) < 2) {
+        if ((noObstacles || playerInAir) && !this.isFlashing && Phaser.Math.Between(0, 1000) < 2 && this.player.body.touching.down // Only allow hiding if on ground
+) {
             this.isFlashing = true;
             this.flashTimer = 0;
             this.mustHide = true;
@@ -507,6 +540,27 @@ export default class HelloWorldScene extends Phaser.Scene {
             this.highScoreText.setText(this.padScore(this.highScore));
             this.hiLabel.x = this.rightEdge - this.highScoreText.width - this.labelValueGap;
         }
+
+        // Game over logic
+        if (this.isGameOver) {
+            this.gameOverText.setVisible(true);
+            this.restartText.setVisible(true);
+
+            // Restart the game on "R" key press
+            if (Phaser.Input.Keyboard.JustDown(this.cursors.down)) {
+                this.scene.restart();
+            }
+        }
+    }
+
+    gameOver() {
+        if (this.isGameOver) return;
+        this.isGameOver = true;
+        this.physics.pause();
+        this.gameOverText.setVisible(true);
+        this.restartText.setVisible(true);
+        this.hideText.setVisible(false);
+        this.flashOverlay.fillAlpha = 0;
     }
 }
 
