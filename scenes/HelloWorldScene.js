@@ -27,7 +27,7 @@ export default class HelloWorldScene extends Phaser.Scene {
         this.load.image('window', 'public/assets/window.png');
         this.load.image('biggestobstacle', 'public/assets/box.png');
         this.load.audio('jump', 'public/assets/jump.mp3');
-        this.load.audio('lasershoot', 'public/assets/lasershoot.mp3');
+        this.load.audio('lasershoot', 'public/assets/laserShoot.mp3');
         this.load.audio('theme', 'public/assets/wyattescapesong2.mp3');
     }
 

@@ -15,6 +15,8 @@ const config = {
     }
 };
 
+let game;
+
 document.fonts.ready.then(() => {
     game = new Phaser.Game(config);
     window.focus();
