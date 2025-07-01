@@ -19,24 +19,28 @@ export default class HelloWorldScene extends Phaser.Scene {
     preload() {
         this.load.image("platform", "./public/assets/platform.png");
         this.load.image("playerStanding", "./public/assets/wyattstanding.png");
-        this.load.image("playerRunning", "./public/assets/wyattrunning.png");
-        this.load.image("obstacle", "./public/assets/table.png"); 
+        this.load.spritesheet("playerRunning", "./public/assets/wyattrunning.png", {
+            frameWidth: 64,
+            frameHeight: 128
+        });
+        this.load.image("obstacle", "./public/assets/table.png");
         this.load.image("bigObstacle", "./public/assets/barrel.png");
         this.load.image('drone', 'public/assets/drone.png');
         this.load.image('door', 'public/assets/door.png');
         this.load.image('window', 'public/assets/window.png');
         this.load.image('biggestobstacle', 'public/assets/box.png');
-        this.load.audio('jump', 'public/assets/jump.mp3');         // <-- changed to .mp3
-        this.load.audio('lasershoot', 'public/assets/lasershoot.mp3'); // <-- changed to .mp3
+        // Remove audio if not used
+        this.load.audio('jump', 'public/assets/jump.mp3');
+        this.load.audio('lasershoot', 'public/assets/lasershoot.mp3');
     }
 
     create() {
         const config = this.sys.game.config;
 
         // Player
-        this.player = this.physics.add.sprite(gameOptions.playerStartPosition, config.height / 2, "playerStanding");
+        this.player = this.physics.add.sprite(gameOptions.playerStartPosition, config.height / 2, "playerRunning", 0);
         this.player.setGravityY(gameOptions.playerGravity);
-        this.player.setScale(1); // Make Wyatt as big as Ninja.png was (adjust if needed)
+        this.player.setScale(1);
 
         // Platforms group
         this.platforms = this.physics.add.group();
@@ -84,9 +88,18 @@ export default class HelloWorldScene extends Phaser.Scene {
         this.keySpace = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
         this.keyR = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
 
-        this.physics.add.collider(this.player, this.obstacleGroup, () => {
-            this.gameOver();
-        }, null, this);
+        // FIXED COLLIDER:
+        this.physics.add.collider(
+            this.player,
+            this.obstacleGroup,
+            (player, obstacle) => {
+                if (obstacle.active && obstacle.visible) {
+                    this.gameOver();
+                }
+            },
+            null,
+            this
+        );
 
         this.physics.add.overlap(this.player, this.droneGroup, this.collectDrone, null, this);
         this.canTripleJump = false;
@@ -205,11 +218,14 @@ export default class HelloWorldScene extends Phaser.Scene {
         platform.doorSprite.setDepth(-10);
         platform.doorOffsetX = ninjaX - platform.x;
         this.textures.get('door').setFilter(Phaser.Textures.FilterMode.NEAREST);
-        this.textures.get('player').setFilter(Phaser.Textures.FilterMode.NEAREST);
 
-        // Sounds
-        this.jumpSound = this.sound.add('jump');
-        this.laserShootSound = this.sound.add('lasershoot');
+        // Create running animation
+        this.anims.create({
+            key: 'run',
+            frames: this.anims.generateFrameNumbers('playerRunning', { start: 0, end: 5 }), // adjust end as needed
+            frameRate: 10,
+            repeat: -1
+        });
     }
 
     addPlatform(platformWidth, posX){
@@ -388,7 +404,7 @@ export default class HelloWorldScene extends Phaser.Scene {
             ) {
                 this.inIntroRoom = false;
                 this.startText.setVisible(false);
-                this.player.setTexture("playerRunning"); // Switch to running sprite
+                this.player.anims.play("run", true); // <-- Start running animation
             }
             return;
         } else {
@@ -692,48 +708,45 @@ export default class HelloWorldScene extends Phaser.Scene {
         this.hideText.setVisible(false);
         this.flashOverlay.fillAlpha = 0;
     }
-}anvas");
+}
 
+// --- Canvas Resize and CSS Injection (OUTSIDE the class!) ---
+
+function resizeGame() {
     let canvas = document.querySelector("canvas");
-    let windowWidth = window.innerWidth;h / windowHeight;
-    let windowHeight = window.innerHeight;fig.height;
+    if (!canvas) return;
+    let windowWidth = window.innerWidth;
+    let windowHeight = window.innerHeight;
+    let gameRatio = canvas.width / canvas.height;
     let windowRatio = windowWidth / windowHeight;
-    let gameRatio = game.config.width / game.config.height;   canvas.style.width = windowWidth + "px";
-    if(windowRatio < gameRatio){anvas.style.height = (windowWidth / gameRatio) + "px";
+    if (windowRatio < gameRatio) {
+        canvas.style.width = windowWidth + "px";
         canvas.style.height = (windowWidth / gameRatio) + "px";
-    }   canvas.style.width = (windowHeight * gameRatio) + "px";"px";
-    else{       canvas.style.height = windowHeight + "px";
-        canvas.style.width = (windowHeight * gameRatio) + "px";    }atio) + "px";    }
-        canvas.style.height = windowHeight + "px";   canvas.style.height = windowHeight + "px";
+    } else {
+        canvas.style.width = (windowHeight * gameRatio) + "px";
+        canvas.style.height = windowHeight + "px";
     }
-}es directly in the JavaScript file
-style = document.createElement('style');
-// Add the CSS styles directly in the JavaScript filept file
-const style = document.createElement('style');eateElement('style');
-style.innerHTML = ` #222;innerHTML = ` #222;
+}
+
+// Add the CSS styles directly in the JavaScript file
+const style = document.createElement('style');
+style.innerHTML = `
 body {
-    background: #222;: #222;
+    background: #222;
     margin: 0;
-    padding: 0;enter;
-    display: flex;   justify-content: center;nt: center;
-    align-items: center;ht: 100vh;100vh;   justify-content: center;
+    padding: 0;
+    display: flex;
     justify-content: center;
+    align-items: center;
     height: 100vh;
-}   display: block;o;
-canvas {  margin: auto; display: block;
+}
+canvas {
     display: block;
-    margin: auto;`;;
-}cument.head.appendChild(style);`;
+    margin: auto;
+}
 `;
-document.head.appendChild(style);, adjust as needed)Phaser config (example, adjust as needed)
-= {
-// Phaser config (example, adjust as needed)....= {ender: {
-const config = {
-    // ...other config...      pixelArt: true        pixelArt: true
-    }
+document.head.appendChild(style);
 
-};
-
-};    }        pixelArt: true    render: {    }    }        pixelArt: true    render: {    }
-
-};};
+// Optionally, call resizeGame on window resize
+window.addEventListener("resize", resizeGame);
+window.addEventListener("DOMContentLoaded", resizeGame);

@@ -1,46 +1,40 @@
 import HelloWorldScene from "./scenes/HelloWorldScene.js";
 
-// global game options
-let gameOptions = {
-    platformStartSpeed: 350,
-    spawnRange: [100, 350],
-    platformSizeRange: [50, 250],
-    playerGravity: 900,
-    jumpForce: 400,
-    playerStartPosition: 200,
-    jumps: 2
-};
-
 let game;
 
-// playGame scene
-class playGame extends Phaser.Scene{
-    constructor(){
-        super("PlayGame");
-    }
-}
-
-// Create a new Phaser config object
 const config = {
     type: Phaser.AUTO,
     width: 1334,
     height: 750,
     scene: [HelloWorldScene],
     backgroundColor: 0x11173B, 
-    // physics settings
     physics: {
         default: "arcade",
         arcade: {
-          debug: false,
-          
+            debug: false,
         }
     }
 };
 
-// Create a new Phaser game instance
 document.fonts.ready.then(() => {
     game = new Phaser.Game(config);
     window.focus();
     resize();
     window.addEventListener("resize", resize, false);
 });
+
+// Resize function (if you use it)
+function resize() {
+    let canvas = document.querySelector("canvas");
+    let windowWidth = window.innerWidth;
+    let windowHeight = window.innerHeight;
+    let windowRatio = windowWidth / windowHeight;
+    let gameRatio = config.width / config.height;
+    if(windowRatio < gameRatio){
+        canvas.style.width = windowWidth + "px";
+        canvas.style.height = (windowWidth / gameRatio) + "px";
+    } else {
+        canvas.style.width = (windowHeight * gameRatio) + "px";
+        canvas.style.height = windowHeight + "px";
+    }
+}
