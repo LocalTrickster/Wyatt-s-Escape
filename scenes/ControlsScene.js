@@ -28,7 +28,7 @@ export default class ControlsScene extends Phaser.Scene {
             fill: '#fff'
         }).setOrigin(0.5);
 
-        // Move drone image further left and center the text
+        
         const droneY = 300;
         this.add.image(width / 2 - 380, droneY, 'drone').setScale(1.2);
         this.add.text(width / 2, droneY, "Collect drones for a triple jump!", {
@@ -37,7 +37,7 @@ export default class ControlsScene extends Phaser.Scene {
             fill: '#fff'
         }).setOrigin(0.5, 0.5);
 
-        // Move hiding mechanic explanation even lower
+       
         this.add.text(width / 2, 420, "HIDING: When 'HIDE' appears, press S / DOWN ARROW in time!", {
             fontFamily: 'PublicPixel',
             fontSize: '18px',

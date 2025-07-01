@@ -93,7 +93,7 @@ export default class HelloWorldScene extends Phaser.Scene {
         
         this.jumpSound = this.sound.add('jump');
         this.laserShootSound = this.sound.add('lasershoot');
-        // Music: only create if not already present
+        
         if (!this.sound.get('theme')) {
             this.themeMusic = this.sound.add('theme', { loop: true });
         } else {
@@ -170,7 +170,7 @@ export default class HelloWorldScene extends Phaser.Scene {
             { fontFamily: 'PublicPixel', fontSize: '20px', fill: '#fff', align: 'right' }
         ).setOrigin(1, 0);
 
-        // HI label
+       
         this.hiLabel = this.add.text(
             this.rightEdge - this.highScoreText.width - this.labelValueGap, topY + lineGap,
             "HI",
@@ -266,19 +266,19 @@ export default class HelloWorldScene extends Phaser.Scene {
         this.obstaclePool.getChildren().forEach(obj => {
             if (!obstacle && !obj.active) obstacle = obj;
         });
-        const yOffset = 4; // Move obstacle up by 12 pixels
+        const yOffset = 4; 
         if(obstacle){
             this.obstaclePool.remove(obstacle);
             this.obstacleGroup.remove(obstacle);
             obstacle.x = posX;
-            obstacle.y = platformY - yOffset; // <-- adjust here
+            obstacle.y = platformY - yOffset; 
             obstacle.setTexture("obstacle");
             obstacle.setActive(true);
             obstacle.setVisible(true);
             obstacle.displayWidth = 80;
             obstacle.displayHeight = 40;
         } else {
-            obstacle = this.physics.add.sprite(posX, platformY - yOffset, "obstacle"); // <-- adjust here
+            obstacle = this.physics.add.sprite(posX, platformY - yOffset, "obstacle"); 
             obstacle.setImmovable(true);
             obstacle.displayWidth = 80;
             obstacle.displayHeight = 40;
@@ -291,7 +291,7 @@ export default class HelloWorldScene extends Phaser.Scene {
         this.obstaclePool.getChildren().forEach(obj => {
             if (!obstacle && !obj.active) obstacle = obj;
         });
-        const yOffset = -10; // Lower it further (negative moves it down)
+        const yOffset = -10; 
         if(obstacle){
             this.obstaclePool.remove(obstacle);
             this.obstacleGroup.remove(obstacle);
@@ -316,7 +316,7 @@ export default class HelloWorldScene extends Phaser.Scene {
         this.obstaclePool.getChildren().forEach(obj => {
             if (!obstacle && !obj.active) obstacle = obj;
         });
-        const yOffset = -30; // Lower it further (negative moves it down more)
+        const yOffset = -30; 
         if(obstacle){
             this.obstaclePool.remove(obstacle);
             this.obstacleGroup.remove(obstacle);
@@ -552,7 +552,7 @@ export default class HelloWorldScene extends Phaser.Scene {
             this.obstacleGroup.remove(obstacle);
         });
 
-        // Move drones left and remove off-screen ones
+        
         let dronesToRemove = [];
         this.droneGroup.children.iterate(drone => {
             drone.x -= speed;
