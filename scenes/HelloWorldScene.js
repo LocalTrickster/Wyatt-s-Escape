@@ -28,12 +28,13 @@ export default class HelloWorldScene extends Phaser.Scene {
         this.load.image('biggestobstacle', 'public/assets/box.png');
         this.load.audio('jump', 'public/assets/jump.mp3');
         this.load.audio('lasershoot', 'public/assets/lasershoot.mp3');
+        this.load.audio('theme', 'public/assets/wyattescapesong2.mp3');
     }
 
     create() {
         const config = this.sys.game.config;
 
-        // Player: use the standing image at start
+        
         this.player = this.physics.add.sprite(
             gameOptions.playerStartPosition,
             config.height / 2,
@@ -42,13 +43,13 @@ export default class HelloWorldScene extends Phaser.Scene {
         this.player.setGravityY(gameOptions.playerGravity);
         this.player.setScale(1);
 
-        // Platforms group
+        
         this.platforms = this.physics.add.group();
 
         const platformY = config.height * 0.7;
         const platformWidth = config.width * 1.5;
 
-        // First platform
+        
         let platform1 = this.platforms.create(0, platformY, "platform");
         platform1.setOrigin(0, 0.1);
         platform1.displayWidth = platformWidth;
@@ -56,7 +57,7 @@ export default class HelloWorldScene extends Phaser.Scene {
         platform1.setImmovable(true);
         platform1.body.allowGravity = false;
 
-        // Second platform
+        
         let platform2 = this.platforms.create(platformWidth, platformY, "platform");
         platform2.setOrigin(0, 0.1);
         platform2.displayWidth = platformWidth;
@@ -64,10 +65,10 @@ export default class HelloWorldScene extends Phaser.Scene {
         platform2.setImmovable(true);
         platform2.body.allowGravity = false;
 
-        // Add collider AFTER creating platforms
+       
         this.physics.add.collider(this.player, this.platforms);
 
-        // Obstacles group
+        
         this.obstacleGroup = this.add.group();
         this.obstaclePool = this.add.group();
         this.droneGroup = this.physics.add.group();
@@ -89,11 +90,17 @@ export default class HelloWorldScene extends Phaser.Scene {
         this.keyS = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
         this.keyR = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
 
-        // Sounds
+        
         this.jumpSound = this.sound.add('jump');
         this.laserShootSound = this.sound.add('lasershoot');
+        // Music: only create if not already present
+        if (!this.sound.get('theme')) {
+            this.themeMusic = this.sound.add('theme', { loop: true });
+        } else {
+            this.themeMusic = this.sound.get('theme');
+        }
 
-        // Collider for obstacles
+        
         this.physics.add.collider(
             this.player,
             this.obstacleGroup,
@@ -109,7 +116,7 @@ export default class HelloWorldScene extends Phaser.Scene {
         this.physics.add.overlap(this.player, this.droneGroup, this.collectDrone, null, this);
         this.canTripleJump = false;
 
-        // Flash overlay for damage indication
+        
         this.flashOverlay = this.add.rectangle(
             config.width / 2,
             config.height / 2,
@@ -129,12 +136,12 @@ export default class HelloWorldScene extends Phaser.Scene {
         this.platformSpeedIncrease = 5;
         this.maxPlatformSpeed = 900;
 
-        // Score variables
+       
         this.score = 0;
         this.highScore = localStorage.getItem('highScore') ? parseInt(localStorage.getItem('highScore')) : 0;
         this.scoreTimer = 0;
 
-        // Padding and layout constants
+        
         const padding = 30;
         this.labelValueGap = 16;
         const topY = 20;
@@ -142,21 +149,21 @@ export default class HelloWorldScene extends Phaser.Scene {
 
         this.rightEdge = config.width - 30;
 
-        // Score value
+        
         this.scoreText = this.add.text(
             this.rightEdge, topY,
             this.padScore(this.score),
             { fontFamily: 'PublicPixel', fontSize: '24px', fill: '#fff', align: 'right' }
         ).setOrigin(1, 0);
 
-        // SCORE label
+       
         this.scoreLabel = this.add.text(
             this.rightEdge - this.scoreText.width - this.labelValueGap, topY,
             "SCORE",
             { fontFamily: 'PublicPixel', fontSize: '24px', fill: '#fff', align: 'right' }
         ).setOrigin(1, 0);
 
-        // High score value
+       
         this.highScoreText = this.add.text(
             this.rightEdge, topY + lineGap,
             this.padScore(this.highScore),
@@ -389,6 +396,9 @@ export default class HelloWorldScene extends Phaser.Scene {
             this.restartText.setVisible(true);
 
             if (Phaser.Input.Keyboard.JustDown(this.keyR)) {
+                if (this.themeMusic && this.themeMusic.isPlaying) {
+                    this.themeMusic.stop();
+                }
                 this.scene.restart();
             }
             return;
@@ -425,6 +435,9 @@ export default class HelloWorldScene extends Phaser.Scene {
                 this.runFrame = 0;
                 this.runAnimTimer = 0;
                 this.player.setTexture("playerStanding");
+                if (this.themeMusic && !this.themeMusic.isPlaying) {
+                    this.themeMusic.play();
+                }
             }
             return;
         } else {
@@ -683,41 +696,6 @@ export default class HelloWorldScene extends Phaser.Scene {
             }
         });
 
-        // Increase platform speed over time, up to a max speed
-        this.currentPlatformSpeed += this.platformSpeedIncrease * (this.game.loop.delta / 1000);
-        if (this.currentPlatformSpeed > this.maxPlatformSpeed) {
-            this.currentPlatformSpeed = this.maxPlatformSpeed;
-        }
-
-        // Score increases faster (every 100ms, +1 point per tick)
-        this.scoreTimer += this.game.loop.delta;
-        if (this.scoreTimer >= 100) {
-            this.score += 1;
-            this.scoreText.setText(this.padScore(this.score));
-            this.scoreLabel.x = this.rightEdge - this.scoreText.width - this.labelValueGap;
-            this.hiLabel.x = this.rightEdge - this.highScoreText.width - this.labelValueGap;
-
-            this.highScoreText.setText(this.padScore(this.highScore));
-            this.scoreTimer = 0;
-        }
-
-        // Check and update high score
-        if (this.score > this.highScore) {
-            this.highScore = this.score;
-            localStorage.setItem('highScore', this.highScore);
-            this.highScoreText.setText(this.padScore(this.highScore));
-            this.hiLabel.x = this.rightEdge - this.highScoreText.width - this.labelValueGap;
-        }
-
-        // Game over logic (redundant, but safe)
-        if (this.isGameOver) {
-            this.gameOverText.setVisible(true);
-            this.restartText.setVisible(true);
-            if (Phaser.Input.Keyboard.JustDown(this.keyR)) {
-                this.scene.restart();
-            }
-        }
-
         // Running animation toggle
         if (this.isRunning && !this.isGameOver) {
             this.runAnimTimer += this.game.loop.delta;
@@ -743,6 +721,9 @@ export default class HelloWorldScene extends Phaser.Scene {
         this.restartText.setVisible(true);
         this.hideText.setVisible(false);
         this.flashOverlay.fillAlpha = 0;
+        if (this.themeMusic && this.themeMusic.isPlaying) {
+            this.themeMusic.stop();
+        }
     }
 }
 
