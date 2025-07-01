@@ -1,12 +1,11 @@
 import HelloWorldScene from "./scenes/HelloWorldScene.js";
-
-let game;
+import ControlsScene from "./scenes/ControlsScene.js"; // <-- Add this
 
 const config = {
     type: Phaser.AUTO,
     width: 1334,
     height: 750,
-    scene: [HelloWorldScene],
+    scene: [HelloWorldScene, ControlsScene], // <-- Add ControlsScene here
     backgroundColor: 0x11173B, 
     physics: {
         default: "arcade",

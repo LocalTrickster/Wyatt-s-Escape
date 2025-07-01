@@ -19,10 +19,7 @@ export default class HelloWorldScene extends Phaser.Scene {
     preload() {
         this.load.image("platform", "./public/assets/platform.png");
         this.load.image("playerStanding", "./public/assets/wyattstanding.png");
-        this.load.spritesheet("playerRunning", "./public/assets/wyattrunning.png", {
-            frameWidth: 64,
-            frameHeight: 128
-        });
+        this.load.image("playerRunning", "./public/assets/wyattrunning.png");
         this.load.image("obstacle", "./public/assets/table.png");
         this.load.image("bigObstacle", "./public/assets/barrel.png");
         this.load.image('drone', 'public/assets/drone.png');
@@ -36,7 +33,7 @@ export default class HelloWorldScene extends Phaser.Scene {
     create() {
         const config = this.sys.game.config;
 
-        // Player: use the spritesheet, frame 0 (standing pose)
+        // Player: use the standing image at start
         this.player = this.physics.add.sprite(
             gameOptions.playerStartPosition,
             config.height / 2,
@@ -89,9 +86,14 @@ export default class HelloWorldScene extends Phaser.Scene {
         this.cursors = this.input.keyboard.createCursorKeys();
         this.keyW = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
         this.keySpace = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+        this.keyS = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
         this.keyR = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
 
-        // FIXED COLLIDER:
+        // Sounds
+        this.jumpSound = this.sound.add('jump');
+        this.laserShootSound = this.sound.add('lasershoot');
+
+        // Collider for obstacles
         this.physics.add.collider(
             this.player,
             this.obstacleGroup,
@@ -200,8 +202,8 @@ export default class HelloWorldScene extends Phaser.Scene {
         this.startText = this.add.text(
             this.sys.game.config.width / 2,
             this.sys.game.config.height / 2 + 140,
-            "Press the jump button to start",
-            { fontFamily: 'PublicPixel', fontSize: '24px', fill: '#fff' }
+            "Press the jump button to start\nPress S or Down for Controls",
+            { fontFamily: 'PublicPixel', fontSize: '24px', fill: '#fff', align: 'center' }
         ).setOrigin(0.5, 0.5);
         this.startText.setDepth(2000);
         this.startText.setVisible(true);
@@ -222,18 +224,11 @@ export default class HelloWorldScene extends Phaser.Scene {
         platform.doorOffsetX = ninjaX - platform.x;
         this.textures.get('door').setFilter(Phaser.Textures.FilterMode.NEAREST);
 
-        // Create running animation
-        this.anims.create({
-            key: 'run',
-            frames: this.anims.generateFrameNumbers('playerRunning', { start: 0, end: 5 }), // adjust end as needed
-            frameRate: 10,
-            repeat: -1
-        });
-
+        // Animation variables for PNG toggle
         this.isRunning = false;
         this.runFrame = 0;
         this.runAnimTimer = 0;
-        this.runAnimInterval = 600; // ms between frame switches (adjust for speed)
+        this.runAnimInterval = 200; // ms between frame switches (adjust for speed)
         this.player.setTexture("playerStanding");
     }
 
@@ -377,7 +372,7 @@ export default class HelloWorldScene extends Phaser.Scene {
             if (this.canTripleJump && this.playerJumps === 3) {
                 this.canTripleJump = false;
             }
-            if (this.jumpSound) this.jumpSound.play(); // <-- Play jump sound
+            if (this.jumpSound) this.jumpSound.play();
         }
     }
 
@@ -406,9 +401,18 @@ export default class HelloWorldScene extends Phaser.Scene {
             this.startText.setVisible(blink);
 
             // Always show standing frame during intro
-            this.player.anims.stop();
-            this.player.setFrame(0);
+            this.player.setTexture("playerStanding");
 
+            // Go to controls scene
+            if (
+                Phaser.Input.Keyboard.JustDown(this.cursors.down) ||
+                Phaser.Input.Keyboard.JustDown(this.keyS)
+            ) {
+                this.scene.start('controls');
+                return;
+            }
+
+            // Start game
             if (
                 Phaser.Input.Keyboard.JustDown(this.cursors.up) ||
                 Phaser.Input.Keyboard.JustDown(this.keyW) ||
@@ -714,6 +718,7 @@ export default class HelloWorldScene extends Phaser.Scene {
             }
         }
 
+        // Running animation toggle
         if (this.isRunning && !this.isGameOver) {
             this.runAnimTimer += this.game.loop.delta;
             if (this.runAnimTimer >= this.runAnimInterval) {
@@ -731,6 +736,8 @@ export default class HelloWorldScene extends Phaser.Scene {
     gameOver() {
         if (this.isGameOver) return;
         this.isGameOver = true;
+        this.isRunning = false;
+        this.player.setTexture("playerStanding");
         this.physics.pause();
         this.gameOverText.setVisible(true);
         this.restartText.setVisible(true);
