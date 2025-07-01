@@ -18,14 +18,16 @@ export default class HelloWorldScene extends Phaser.Scene {
 
     preload() {
         this.load.image("platform", "./public/assets/platform.png");
-        this.load.image("playerStanding", "./public/assets/wyattstanding.png"); // use your standing sprite filename
-        this.load.image("playerRunning", "./public/assets/wyattrunning.png");   // use your running sprite filename
+        this.load.image("playerStanding", "./public/assets/wyattstanding.png");
+        this.load.image("playerRunning", "./public/assets/wyattrunning.png");
         this.load.image("obstacle", "./public/assets/table.png"); 
         this.load.image("bigObstacle", "./public/assets/barrel.png");
         this.load.image('drone', 'public/assets/drone.png');
         this.load.image('door', 'public/assets/door.png');
         this.load.image('window', 'public/assets/window.png');
         this.load.image('biggestobstacle', 'public/assets/box.png');
+        this.load.audio('jump', 'public/assets/jump.mp3');         // <-- changed to .mp3
+        this.load.audio('lasershoot', 'public/assets/lasershoot.mp3'); // <-- changed to .mp3
     }
 
     create() {
@@ -204,6 +206,10 @@ export default class HelloWorldScene extends Phaser.Scene {
         platform.doorOffsetX = ninjaX - platform.x;
         this.textures.get('door').setFilter(Phaser.Textures.FilterMode.NEAREST);
         this.textures.get('player').setFilter(Phaser.Textures.FilterMode.NEAREST);
+
+        // Sounds
+        this.jumpSound = this.sound.add('jump');
+        this.laserShootSound = this.sound.add('lasershoot');
     }
 
     addPlatform(platformWidth, posX){
@@ -328,6 +334,7 @@ export default class HelloWorldScene extends Phaser.Scene {
             if (!this.player.body.touching.down) {
                 this.playerJumps = 1;
             }
+            if (this.laserShootSound) this.laserShootSound.play(); // <-- Play laser shoot sound
         }
     }
 
@@ -345,6 +352,7 @@ export default class HelloWorldScene extends Phaser.Scene {
             if (this.canTripleJump && this.playerJumps === 3) {
                 this.canTripleJump = false;
             }
+            if (this.jumpSound) this.jumpSound.play(); // <-- Play jump sound
         }
     }
 
@@ -684,48 +692,48 @@ export default class HelloWorldScene extends Phaser.Scene {
         this.hideText.setVisible(false);
         this.flashOverlay.fillAlpha = 0;
     }
-}
+}anvas");
 
-// Responsive canvas resize
-function resize(){
     let canvas = document.querySelector("canvas");
-    let windowWidth = window.innerWidth;
-    let windowHeight = window.innerHeight;
+    let windowWidth = window.innerWidth;h / windowHeight;
+    let windowHeight = window.innerHeight;fig.height;
     let windowRatio = windowWidth / windowHeight;
-    let gameRatio = game.config.width / game.config.height;
-    if(windowRatio < gameRatio){
-        canvas.style.width = windowWidth + "px";
+    let gameRatio = game.config.width / game.config.height;   canvas.style.width = windowWidth + "px";
+    if(windowRatio < gameRatio){anvas.style.height = (windowWidth / gameRatio) + "px";
         canvas.style.height = (windowWidth / gameRatio) + "px";
+    }   canvas.style.width = (windowHeight * gameRatio) + "px";"px";
+    else{       canvas.style.height = windowHeight + "px";
+        canvas.style.width = (windowHeight * gameRatio) + "px";    }atio) + "px";    }
+        canvas.style.height = windowHeight + "px";   canvas.style.height = windowHeight + "px";
     }
-    else{
-        canvas.style.width = (windowHeight * gameRatio) + "px";
-        canvas.style.height = windowHeight + "px";
-    }
-}
-
-// Add the CSS styles directly in the JavaScript file
-const style = document.createElement('style');
-style.innerHTML = `
+}es directly in the JavaScript file
+style = document.createElement('style');
+// Add the CSS styles directly in the JavaScript filept file
+const style = document.createElement('style');eateElement('style');
+style.innerHTML = ` #222;innerHTML = ` #222;
 body {
-    background: #222;
+    background: #222;: #222;
     margin: 0;
-    padding: 0;
-    display: flex;
-    align-items: center;
+    padding: 0;enter;
+    display: flex;   justify-content: center;nt: center;
+    align-items: center;ht: 100vh;100vh;   justify-content: center;
     justify-content: center;
     height: 100vh;
-}
-canvas {
+}   display: block;o;
+canvas {  margin: auto; display: block;
     display: block;
-    margin: auto;
-}
+    margin: auto;`;;
+}cument.head.appendChild(style);`;
 `;
-document.head.appendChild(style);
-
-// Phaser config (example, adjust as needed)
+document.head.appendChild(style);, adjust as needed)Phaser config (example, adjust as needed)
+= {
+// Phaser config (example, adjust as needed)....= {ender: {
 const config = {
-    // ...other config...
-    render: {
-        pixelArt: true
+    // ...other config...      pixelArt: true        pixelArt: true
     }
+
 };
+
+};    }        pixelArt: true    render: {    }    }        pixelArt: true    render: {    }
+
+};};
