@@ -29,7 +29,6 @@ export default class HelloWorldScene extends Phaser.Scene {
         this.load.image('door', 'public/assets/door.png');
         this.load.image('window', 'public/assets/window.png');
         this.load.image('biggestobstacle', 'public/assets/box.png');
-        // Remove audio if not used
         this.load.audio('jump', 'public/assets/jump.mp3');
         this.load.audio('lasershoot', 'public/assets/lasershoot.mp3');
     }
@@ -37,8 +36,12 @@ export default class HelloWorldScene extends Phaser.Scene {
     create() {
         const config = this.sys.game.config;
 
-        // Player
-        this.player = this.physics.add.sprite(gameOptions.playerStartPosition, config.height / 2, "playerRunning", 0);
+        // Player: use the spritesheet, frame 0 (standing pose)
+        this.player = this.physics.add.sprite(
+            gameOptions.playerStartPosition,
+            config.height / 2,
+            "playerStanding"
+        );
         this.player.setGravityY(gameOptions.playerGravity);
         this.player.setScale(1);
 
@@ -226,6 +229,12 @@ export default class HelloWorldScene extends Phaser.Scene {
             frameRate: 10,
             repeat: -1
         });
+
+        this.isRunning = false;
+        this.runFrame = 0;
+        this.runAnimTimer = 0;
+        this.runAnimInterval = 600; // ms between frame switches (adjust for speed)
+        this.player.setTexture("playerStanding");
     }
 
     addPlatform(platformWidth, posX){
@@ -396,6 +405,10 @@ export default class HelloWorldScene extends Phaser.Scene {
             const blink = Math.floor(this.time.now / 500) % 2 === 0;
             this.startText.setVisible(blink);
 
+            // Always show standing frame during intro
+            this.player.anims.stop();
+            this.player.setFrame(0);
+
             if (
                 Phaser.Input.Keyboard.JustDown(this.cursors.up) ||
                 Phaser.Input.Keyboard.JustDown(this.keyW) ||
@@ -404,7 +417,10 @@ export default class HelloWorldScene extends Phaser.Scene {
             ) {
                 this.inIntroRoom = false;
                 this.startText.setVisible(false);
-                this.player.anims.play("run", true); // <-- Start running animation
+                this.isRunning = true;
+                this.runFrame = 0;
+                this.runAnimTimer = 0;
+                this.player.setTexture("playerStanding");
             }
             return;
         } else {
@@ -697,6 +713,19 @@ export default class HelloWorldScene extends Phaser.Scene {
                 this.scene.restart();
             }
         }
+
+        if (this.isRunning && !this.isGameOver) {
+            this.runAnimTimer += this.game.loop.delta;
+            if (this.runAnimTimer >= this.runAnimInterval) {
+                this.runFrame = 1 - this.runFrame; // toggles between 0 and 1
+                if (this.runFrame === 0) {
+                    this.player.setTexture("playerStanding");
+                } else {
+                    this.player.setTexture("playerRunning");
+                }
+                this.runAnimTimer = 0;
+            }
+        }
     }
 
     gameOver() {
@@ -747,6 +776,5 @@ canvas {
 `;
 document.head.appendChild(style);
 
-// Optionally, call resizeGame on window resize
 window.addEventListener("resize", resizeGame);
 window.addEventListener("DOMContentLoaded", resizeGame);
