@@ -18,7 +18,9 @@ este obstaculo tiene que ser saltado con dos saltos.
 <img width="924" height="317" alt="barrel" src="https://github.com/user-attachments/assets/ba6d25a5-cf37-4371-ad3e-e01d389f1f0a" />
 </p>
 Cajas (El obstáculo más grande):  
-Este obstáculo necesita la mecánica del dron para poder saltarlo. [Mecánica explicada en](#mecanicas-y-controles)
+Este obstáculo necesita la mecánica del dron para poder saltarlo. 
+
+[Mecánicas y Controles](#mecanicas-y-controles).
 
 
 ## Mecánicas y Controles
