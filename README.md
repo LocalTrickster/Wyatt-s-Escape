@@ -45,7 +45,7 @@ El dron siempre aparece junto a una caja, más especificamente siempre flotando 
 
 
 
-### Mecánicas y Controles
+## Mecánicas y Controles
 
 El juego poseé tres mecanicas principales:
 - **Salto Y doble salto**
