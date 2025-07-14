@@ -7,7 +7,7 @@
 <img width="566" height="350" alt="Wyatt's Escape Logo" src="https://github.com/user-attachments/assets/f5ea4bc1-24a2-4458-8f96-26ef2fa268e6" />
 </div>
 
-## Introducción
+### Introducción
 Wyatt's Escape es un runner infinito inspirado por Dinosaur Game de Google donde un robot intenta escapar un sitio secreto gubernamental para obtener la libertad. El jugador corré infinitamente y intentará obtener el mejor tiempo posible y superarse a si mismo mientras sus habilidades son puestas a prueba.
 
 
@@ -40,7 +40,7 @@ El dron siempre aparece junto a una caja, más especificamente siempre flotando 
 </p>  
 
 
-## Mecánicas y Controles
+### Mecánicas y Controles
 
 El juego poseé tres mecanicas principales:
 - **Salto Y doble salto**
