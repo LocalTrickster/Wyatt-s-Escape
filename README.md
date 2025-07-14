@@ -1,5 +1,6 @@
-# Phaser 3 Template
-
+<div align="center">
+<img width="566" height="350" alt="Wyatt's Escape Logo" src="https://github.com/user-attachments/assets/f5ea4bc1-24a2-4458-8f96-26ef2fa268e6" />
+</div>
 Plantilla para iniciar nuevos proyectos con PHASER 3.
 
 Contiene configuración inicial y buenas prácticas de estructuras de carpetas.
