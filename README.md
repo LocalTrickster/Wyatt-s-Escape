@@ -6,7 +6,7 @@
 Wyatt's Escape es un runner infinito inspirado por Dinosaur Game de Google donde un robot intenta escapar un sitio secreto gubernamental para obtener la libertad. El jugador corré infinitamente y intentará obtener el mejor tiempo posible y superarse a si mismo mientras sus habilidades son puestas a prueba.
 
 
-## Obstaculos
+## Obstaculos y Objetos
 Mesa (El obstaculo más pequeño):
 este obstaculo puede ser saltado con un simple salto.
 <p align="center">
@@ -20,7 +20,19 @@ este obstaculo tiene que ser saltado con dos saltos.
 Cajas (El obstáculo más grande):  
 Este obstáculo necesita la mecánica del dron para poder saltarlo. 
 
-[Mecánicas y Controles](#mecanicas-y-controles).
+[Para saber más mire Mecánicas y Controles](#mecanicas-y-controles).
+
+
+**Dron**
+El dron siempre aparece junto a una caja, más especificamente siempre flotando arriba de una
+
+[Para saber más mire Mecánicas y Controles](#mecanicas-y-controles).
+
+
+<p align="center"> 
+<img width="97" height="136" alt="drone" src="https://github.com/user-attachments/assets/465be85b-ff5c-401a-b12d-e72a92a23012" />
+
+</p>  
 
 
 ## Mecánicas y Controles
@@ -28,13 +40,13 @@ Este obstáculo necesita la mecánica del dron para poder saltarlo.
 El juego poseé tres mecanicas principales:
 - **Salto Y doble salto**
 
-La mecanica principal del juego es saltar para poder evadir y atravesar los obstaculos que se presentan en el camino.
+La mecanica principal del juego es saltar para poder evadir y atravesar los obstaculos que se presentan en el camino. Si se mantiene apretado el boton de salto en el segundo salto, este será más alto y durará más dandole al jugador más maniobras.
 
 **Control de Salto:** ↑/W/Espacio
 
 - **Salto de Dron**
 
-El jugador encontrará
+El jugador encontrará drones flotando arriba de cajas. si el jugador toca estos drones estos desapareceran y le daran un salto extra en el aire para poder atravesar este obstaculo.
 
 - **Esconderse**
 
