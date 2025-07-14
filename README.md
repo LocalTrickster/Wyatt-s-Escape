@@ -1,19 +1,45 @@
 <div align="center">
 <img width="566" height="350" alt="Wyatt's Escape Logo" src="https://github.com/user-attachments/assets/f5ea4bc1-24a2-4458-8f96-26ef2fa268e6" />
 </div>
-Plantilla para iniciar nuevos proyectos con PHASER 3.
 
-Contiene configuración inicial y buenas prácticas de estructuras de carpetas.
+## Introducción
+Wyatt's Escape es un runner infinito inspirado por Dinosaur Game de Google donde un robot intenta escapar un sitio secreto gubernamental para obtener la libertad. El jugador corré infinitamente y intentará obtener el mejor tiempo posible y superarse a si mismo mientras sus habilidades son puestas a prueba.
 
-## Cuando lo utilices
 
-No te olvides de customizarlo a tus necesidades.
+## Obstaculos
+Mesa (El obstaculo más pequeño):
+este obstaculo puede ser saltado con un simple salto.
+<p align="center">
+<img width="225" height="115" alt="table" src="https://github.com/user-attachments/assets/b1d3f0a7-f5cd-4b21-9682-7a47f8107684" />
+</p>
+Barriles (El obstaculo mediano):
+este obstaculo tiene que ser saltado con dos saltos.
+<p align="center">   
+<img width="924" height="317" alt="barrel" src="https://github.com/user-attachments/assets/ba6d25a5-cf37-4371-ad3e-e01d389f1f0a" />
+</p>
+Cajas (El obstáculo más grande):  
+Este obstáculo necesita la mecánica del dron para poder saltarlo. [Mecánica explicada en](#mecanicas-y-controles)
 
-1. Cuando lo utilices como Template desde el botón de GitHub, no olvides cambiar el nombre del repositorio acorde a tu proyecto en el wizard de creación de repositorios.
-1. Luego de clonar el repositorio en tu maquina local. Deberias:
-   1. Actualizar la version de Phaser a la version más actualizada en el archivo `index.html`. Ver la web: https://phaser.io/download/stable
-   1. También, dentro del `index.html` modificar el titulo de la pagina. Por ejemplo: `<title>My Game</title>`
-   1. Ejecutar el proyecto de forma local para ver que este funcionando correctamente. Si no es asi, deberias lograr que corra.
-   1. Una vez que este funcionando correctamente, hacer un commit con el mensaje "Update Phaser version and title".
-   1. Borrar los archivos dentro de la carpeta `/assets` y empezar a desarrollar.
-1. Por ultimo, una buena practica es: modificar este README.md, poner información relevante de tu juego, imagenes, videos, etc, y luego hacer un commit con el mensaje "Customize README.md".
+
+## Mecánicas y Controles
+
+El juego poseé tres mecanicas principales:
+- **Salto Y doble salto**
+
+La mecanica principal del juego es saltar para poder evadir y atravesar los obstaculos que se presentan en el camino.
+
+**Control de Salto:** ↑/W/Espacio
+
+- **Salto de Dron**
+
+El jugador encontrará
+
+- **Esconderse**
+
+Mientras el jugador juegué este será advertido durante en intervalos aleatorio de esconderse. La pantalla se oscurecerá tenuamente y en el centro de la pantalla habrá texto que dice "HIDE!". El jugador debe apretar el boton de esconderse a tiempo o resultará en un Game Over.
+
+**Control de Esconderse:** ↓/S
+
+
+
+
