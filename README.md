@@ -1,3 +1,8 @@
+<div align="center"> 
+<img alt="Static Badge" src="https://img.shields.io/badge/Status%20-%20Complete%20-%20%23808000?style=flat">
+  <img alt="Static Badge" src="https://img.shields.io/badge/Release%20Date%20-%20June%20-%20%236495ED?style=flat">
+
+</div>
 <div align="center">
 <img width="566" height="350" alt="Wyatt's Escape Logo" src="https://github.com/user-attachments/assets/f5ea4bc1-24a2-4458-8f96-26ef2fa268e6" />
 </div>
