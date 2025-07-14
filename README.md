@@ -36,8 +36,11 @@ El dron siempre aparece junto a una caja, más especificamente siempre flotando 
 
 <p align="center"> 
 <img width="97" height="136" alt="drone" src="https://github.com/user-attachments/assets/465be85b-ff5c-401a-b12d-e72a92a23012" />
-
 </p>  
+
+
+
+
 
 
 
