@@ -25,13 +25,13 @@ este obstaculo tiene que ser saltado con dos saltos.
 Cajas (El obstáculo más grande):  
 Este obstáculo necesita la mecánica del dron para poder saltarlo. 
 
-[Para saber más mire Mecánicas y Controles](#mecanicas-y-controles).
+[Consulta más en la sección → Mecánicas y Controles](#mecanicas-y-controles).
 
 
 **Dron**
 El dron siempre aparece junto a una caja, más especificamente siempre flotando arriba de una
 
-[Para saber más mire Mecánicas y Controles](#mecanicas-y-controles).
+[Consulta más en la sección → Mecánicas y Controles](#mecanicas-y-controles).
 
 
 <p align="center"> 
